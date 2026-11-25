@@ -16,7 +16,8 @@ try { process.loadEnvFile(path.join(ROOT, ".env")); } catch { /* no .env file - 
 const { handle, statusInfo } = await import("./lib/ai.mjs"); // after .env is loaded
 
 const PORT = Number(process.env.PORT || 5050);
-const HOST = process.env.HOST || "127.0.0.1";
+// On hosting platforms (Render etc.) listen on all interfaces; locally only on this computer.
+const HOST = process.env.HOST || (process.env.RENDER || process.env.HOSTED ? "0.0.0.0" : "127.0.0.1");
 const MAX_BODY = 400 * 1024; // bytes of JSON accepted per request
 
 const TYPES = {
