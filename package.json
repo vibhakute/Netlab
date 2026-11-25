@@ -1,0 +1,17 @@
+{
+  "name": "netlearn-data-communication-guide",
+  "version": "2.0.0",
+  "private": true,
+  "description": "NetLearn - interactive Data Communication learning site with an optional Claude-powered study assistant.",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node server.mjs",
+    "test": "node --test tests/sim-logic.test.js"
+  },
+  "engines": {
+    "node": ">=20.12"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.13.0"
+  }
+}

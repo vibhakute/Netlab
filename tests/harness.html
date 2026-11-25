@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module Harness</title><link rel="stylesheet" href="../assets/css/style.css">
+<style>body{padding:16px;background:#fff}#out{font:12px Consolas,monospace;white-space:pre-wrap}</style></head>
+<body data-page="harness">
+<p>Development harness: <code>harness.html#module-id</code> mounts one module. <code>testModule(id)</code> exercises its controls.</p>
+<div id="mount"></div><div id="out"></div>
+<script src="../assets/js/topics-beginner.js"></script>
+<script src="../assets/js/topics-intermediate.js"></script>
+<script src="../assets/js/topics-advanced.js"></script>
+<script src="../assets/js/quiz-data.js"></script>
+<script src="../assets/js/syllabus-u1.js"></script>
+<script src="../assets/js/syllabus-u2.js"></script>
+<script src="../assets/js/syllabus-u3.js"></script>
+<script src="../assets/js/syllabus-u4.js"></script>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/sim-logic.js"></script>
+<script src="../assets/js/viz-core.js"></script>
+<script src="../assets/js/viz-network.js"></script>
+<script src="../assets/js/viz-u1.js"></script>
+<script src="../assets/js/viz-u2.js" onerror="console.warn('viz-u2 missing')"></script>
+<script src="../assets/js/viz-u3.js" onerror="console.warn('viz-u3 missing')"></script>
+<script src="../assets/js/viz-u4.js" onerror="console.warn('viz-u4 missing')"></script>
+<script src="../assets/js/viz-extra.js" onerror="console.warn('viz-extra missing')"></script>
+<script>
+const errs = [];
+window.addEventListener("error", e => errs.push(String(e.message)));
+const _ce = console.error; console.error = function () { errs.push(Array.from(arguments).map(String).join(" ")); _ce.apply(console, arguments); };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let cur = null;
+function mountId(id) { if (cur) cur.destroy(); cur = VizKit.mount(document.getElementById("mount"), id, {}); return cur; }
+/* Mount a module, drive every control, step through stages; returns errors. */
+async function testModule(id) {
+  errs.length = 0;
+  if (!VizKit.get(id)) return { id, errors: ["NOT REGISTERED"] };
+  mountId(id); await sleep(300);
+  const tb = document.querySelector("#mount .viz-toolbar");
+  for (const el of tb.querySelectorAll("select[data-id]")) { for (const o of el.options) { el.value = o.value; el.dispatchEvent(new Event("change")); await sleep(40); } }
+  for (const el of tb.querySelectorAll("input[type=range][data-id]")) { for (const v of [el.min, el.max, (+el.min + +el.max) / 2]) { el.value = v; el.dispatchEvent(new Event("input")); await sleep(30); } }
+  for (const el of tb.querySelectorAll("input[type=checkbox][data-id]")) { el.click(); await sleep(30); el.click(); }
+  for (const el of tb.querySelectorAll("input[type=text][data-id]")) { const v = el.value; el.value = ""; el.dispatchEvent(new Event("input")); await sleep(30); el.value = v; el.dispatchEvent(new Event("input")); }
+  for (const b of tb.querySelectorAll("button")) { if (b.id === "tlNext" || b.id === "tlBack") continue; b.click(); await sleep(60); }
+  const next = tb.querySelector("#tlNext");
+  if (next) { for (let k = 0; k < 14 && !next.disabled; k++) { next.click(); await sleep(140); } }
+  const c = document.querySelector("#mount canvas"); if (c) { const r = c.getBoundingClientRect(); c.dispatchEvent(new MouseEvent("click", { clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, bubbles: true })); }
+  await sleep(250);
+  return { id, errors: errs.slice() };
+}
+async function testMany(ids) { const out = []; for (const id of ids) { const r = await testModule(id); if (r.errors.length) out.push(r); } return { tested: ids.length, failed: out }; }
+function idsFor(prefixFilter) { return VizKit.all().map(d => d.id).filter(prefixFilter || (() => true)); }
+window.addEventListener("DOMContentLoaded", () => { const id = location.hash.slice(1); if (id) mountId(id); });
+</script>
+</body></html>
