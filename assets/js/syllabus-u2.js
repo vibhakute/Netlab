@@ -7,7 +7,7 @@ window.QUIZ = window.QUIZ || [];
 {
   id: "u2-intro", unit: "u2", title: "Introduction and Types of Transmission Media", minutes: 8,
   summary: "What a transmission medium is, how media are classified into guided (wired) and unguided (wireless), and the open-wire line.",
-  source: "Unit II slides 4–7, 19", related: ["media"],
+  source: "Unit II slides 4–7, 19", related: [],
   intro: "<p>Every bit you send needs a path: a copper wire, a glass fibre, or the air itself. That path is the <b>transmission medium</b>, and choosing it is one of the first decisions in designing any network.</p>",
   definition: "A transmission medium is the physical path between the transmitter and the receiver — the path along which data is sent from one device to another. It can be guided (wired/bounded) or unguided (wireless/unbounded).",
   why: "<p>The medium sets the limits on <b>distance</b>, <b>speed</b>, <b>interference</b>, <b>security</b> and <b>cost</b>. A medium that suits a data centre (fibre) is wrong for a TV remote (infrared), and vice versa.</p>",
@@ -166,7 +166,7 @@ window.QUIZ = window.QUIZ || [];
 {
   id: "u2-wireless", unit: "u2", title: "Unguided Media: Radio Waves, Microwaves and Infrared", minutes: 10,
   summary: "RF propagation and radio frequency bands, line-of-sight microwave links and short-range infrared — with a full comparison.",
-  source: "Unit II slides 19–25", related: ["wireless"],
+  source: "Unit II slides 19–25", related: ["u2-satellite", "u2-compare"],
   intro: "<p>Wireless media carry signals as electromagnetic waves through air or space. Three ranges matter in data communication: <b>radio waves</b>, <b>microwaves</b> and <b>infrared</b>. The frequency decides how far they go, what they pass through and how directional they are.</p>",
   definition: "Unguided (wireless) media transmit electromagnetic signals without a physical conductor. Radio waves (3 kHz – 1 GHz) are omnidirectional; microwaves (1 – 300 GHz) are line-of-sight and directional; infrared (300 GHz – 400 THz) is very short range and cannot pass through walls.",
   why: "<p>Wireless media make mobility possible — phones, Wi-Fi, broadcast radio and satellite links. Each band's behaviour explains design choices, such as why FM towers are tall and why your TV remote has to point at the TV.</p>",
@@ -232,7 +232,7 @@ window.QUIZ = window.QUIZ || [];
 {
   id: "u2-5g", unit: "u2", title: "4G and 5G Communication Technology", minutes: 8,
   summary: "Key features of 5G (speed, latency, massive connectivity, network slicing), real-world applications, and how 5G differs from 4G.",
-  source: "Unit II slides 29–32", related: ["wireless"],
+  source: "Unit II slides 29–32", related: ["u2-wireless"],
   intro: "<p>Each mobile generation changed what phones could do: 2G brought SMS, 3G mobile Internet, 4G video streaming. <b>5G</b> is designed not just for phones but for cars, factories and millions of IoT devices.</p>",
   definition: "5G (fifth generation) is the latest mobile network standard, offering ultra-fast speeds, very low latency and massive connectivity. 4G (fourth generation, LTE/LTE-Advanced) is the all-IP mobile broadband standard that preceded it.",
   why: "<p>5G enables real-time applications that 4G could not support reliably — autonomous driving, remote surgery, VR and industrial automation — and it connects huge numbers of IoT devices.</p>",
@@ -295,7 +295,7 @@ window.QUIZ = window.QUIZ || [];
 {
   id: "u2-secure", unit: "u2", title: "Secure Transmission Media", minutes: 7,
   summary: "Protecting data in transit: how easily each medium can be intercepted, and the physical and cryptographic techniques that secure it.",
-  source: "Unit II slide 39", related: ["security"],
+  source: "Unit II slide 39", related: [],
   intro: "<p>Data is most exposed while it is moving. Anyone who can tap a cable or listen to the air may try to read or alter it. <b>Secure transmission</b> is about making that impossible or useless.</p>",
   definition: "Secure transmission media are the physical or wireless channels that carry data between systems, together with the properties and techniques that protect that data from being intercepted, altered or accessed by unauthorised parties while in transit.",
   why: "<p>Banking, health records, exam results and passwords all cross networks. If the medium or its protections are weak, attackers can eavesdrop (confidentiality), tamper (integrity) or block traffic (availability).</p>",
@@ -356,7 +356,7 @@ window.QUIZ = window.QUIZ || [];
 {
   id: "u2-compare", unit: "u2", title: "Comparison of Transmission Media", minutes: 7,
   summary: "Side-by-side comparison of every Unit II medium — speed, distance, cost, noise immunity, security — and how to choose one for an application.",
-  source: "Unit II slides 7, 19, 25 and topics above", related: ["media"],
+  source: "Unit II slides 7, 19, 25 and topics above", related: ["u2-intro"],
   intro: "<p>Unit II's outcome is to <b>make use of suitable transmission media for a network application</b>. This topic pulls all the media together so you can compare them and choose wisely.</p>",
   definition: "Comparing transmission media means evaluating each medium on bandwidth, distance, attenuation, noise immunity, security, installation and cost, so the most suitable one can be chosen for a given application.",
   why: "<p>Exam questions often ask you to “compare” or “suggest a suitable medium”. In real projects the right choice saves money and avoids failures.</p>",

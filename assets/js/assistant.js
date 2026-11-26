@@ -59,9 +59,7 @@
   }
   function topicText(t) {
     if (!t) return "";
-    if (t.unit) return [t.definition, t.intro, t.why, t.how, t.deep, (t.exam || []).join(". "), (t.terms || []).map(x => x[0] + ": " + x[1]).join(". "), t.recap].map(strip).join("\n");
-    const n = t.notes || {};
-    return [n.definition, (n.points || []).join(". "), strip(t.body)].join("\n");
+    return [t.definition, t.intro, t.why, t.how, t.deep, (t.exam || []).join(". "), (t.terms || []).map(x => x[0] + ": " + x[1]).join(". "), t.recap].map(strip).join("\n");
   }
   function lessonDocs() { return A.topics().map(t => ({ id: "lesson:" + t.id, name: t.title, topic: t.id, pages: [{ n: 1, text: topicText(t) }] })); }
   const ctxTopic = () => { const c = A.getContext(); return c.topic ? A.topicById(c.topic) : null; };
@@ -119,7 +117,7 @@
   }
   function ctxLine() {
     const c = A.getContext(), t = ctxTopic();
-    $("#aiCtx").textContent = t ? "Context: " + (t.unit ? A.unitById(t.unit).name : "Additional") + " › " + t.title + (c.step ? " › " + STEP_NAMES[c.step] : "")
+    $("#aiCtx").textContent = t ? "Context: " + A.unitById(t.unit).name + " › " + t.title + (c.step ? " › " + STEP_NAMES[c.step] : "")
       : c.unitTitle ? "Context: " + c.unitTitle : "Context: " + (document.title.split(" — ")[0] || "NetLab");
   }
   function scroll() { const b = body(); b.scrollTop = b.scrollHeight; }
@@ -169,7 +167,7 @@
   }
   function contextPayload() {
     const c = A.getContext(), t = ctxTopic();
-    return { page: c.page || "", step: c.step || "", unit: t ? (t.unit ? A.unitById(t.unit).name + " — " + A.unitById(t.unit).title : "Additional topic") : (c.unitTitle || ""), topic: t ? t.title : "", topicText: t ? topicText(t).slice(0, 5000) : "" };
+    return { page: c.page || "", step: c.step || "", unit: t ? A.unitById(t.unit).name + " — " + A.unitById(t.unit).title : (c.unitTitle || ""), topic: t ? t.title : "", topicText: t ? topicText(t).slice(0, 5000) : "" };
   }
   const citeList = hits => hits.length ? '<span class="src">Sources: ' + hits.map(h => escapeHtml(h.docName) + ", p. " + h.page).filter((v, i, a) => a.indexOf(v) === i).join(" · ") + "</span>" : "";
 
@@ -183,7 +181,7 @@
     // Offline: retrieve from lessons (current topic boosted) and materials.
     const t = ctxTopic();
     let hits = DocStore.searchDocs(lessonDocs(), q + (t && q.split(/\s+/).length < 4 ? " " + t.title : ""), 3);
-    if (!hits.length && t && /^(explain|what|summar|define|tell)/i.test(q)) hits = [{ docId: "lesson:" + t.id, docName: t.title, page: 1, text: strip(t.unit ? t.definition + " " + t.recap : (t.notes || {}).definition) }];
+    if (!hits.length && t && /^(explain|what|summar|define|tell)/i.test(q)) hits = [{ docId: "lesson:" + t.id, docName: t.title, page: 1, text: strip(t.definition + " " + t.recap) }];
     let html = "";
     if (hits.length) {
       html += "<p><b>From the lessons</b> (offline search — not AI-generated):</p>" + hits.map(h => { const id = h.docId.slice(7); return '<p>“' + escapeHtml(trim(h.text, 360)) + '”<br><a href="' + A.topicHref(id) + '">→ ' + escapeHtml(h.docName) + "</a></p>"; }).join("");
@@ -246,7 +244,7 @@
       const last = body().lastElementChild; last.querySelector("[data-dl]").onclick = () => A.download(t.id + "-ai-notes.md", "# " + t.title + "\n\n" + r.text);
       return;
     }
-    const n = t.unit ? { def: strip(t.definition), pts: (t.exam || []).map(strip), sum: strip(t.recap) } : { def: (t.notes || {}).definition, pts: (t.notes || {}).points || [], sum: ((t.notes || {}).revision || []).join(" · ") };
+    const n = { def: strip(t.definition), pts: (t.exam || []).map(strip), sum: strip(t.recap) };
     const text = "# " + t.title + "\n\n**Definition:** " + n.def + "\n\n## Key points\n" + n.pts.map(p => "- " + p).join("\n") + "\n\n## Summary\n" + n.sum;
     add("assistant", md(text) + '<span class="src">Compiled from the lesson “' + escapeHtml(t.title) + '” (offline — not AI-generated). <a href="' + A.topicHref(t.id, "notes") + '">Open the Notes step →</a></span>');
   }
@@ -255,10 +253,10 @@
   function practicePool(q) {
     const all = window.QUIZ || [];
     const u = A.UNITS.find(x => q && new RegExp("\\b(" + x.name + "|unit\\s*" + x.id.slice(1) + ")\\b", "i").test(q));
-    if (u) return { label: u.id === "extra" ? "Additional topics" : u.name, qs: all.filter(x => { const t = A.topicById(x.t); return t && A.unitOf(t) === u.id; }) };
+    if (u) return { label: u.name, qs: all.filter(x => { const t = A.topicById(x.t); return t && A.unitOf(t) === u.id; }) };
     const t = findTopic(q || "");
     if (t) return { label: t.title, qs: all.filter(x => x.t === t.id) };
-    return { label: "the syllabus", qs: all.filter(x => { const t = A.topicById(x.t); return t && t.unit; }) };
+    return { label: "the four units", qs: all.filter(x => A.topicById(x.t)) };
   }
   function startPractice(q) {
     const p = practicePool(q);

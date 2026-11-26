@@ -90,9 +90,6 @@ hr{border:0;border-top:1px solid var(--line);margin:2rem 0}
 
 /* ---------- Level badges ---------- */
 .badge{display:inline-block;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:10px;letter-spacing:.02em;vertical-align:middle}
-.lvl-beginner{background:var(--primary-soft);color:var(--primary-dark)}
-.lvl-intermediate{background:var(--blue-soft);color:var(--blue)}
-.lvl-advanced{background:var(--violet-soft);color:var(--violet)}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
 .dot.beginner{background:var(--primary)}.dot.intermediate{background:var(--blue)}.dot.advanced{background:var(--violet)}
 
@@ -399,7 +396,6 @@ body.lsb-collapsed .lsb-item{justify-content:center;padding:11px 0}
 .unit-row:last-child{border-bottom:0}
 .unit-row:hover{background:var(--bg-soft);text-decoration:none}
 .unit-row .uic{width:40px;height:40px;border-radius:8px;background:#eef1f4;color:var(--nav);display:grid;place-items:center}
-.unit-row.extra .uic{background:var(--violet-soft);color:var(--violet)}
 .unit-row b{display:block}
 .unit-row small{color:var(--ink-faint);font-size:.82rem}
 .unit-row .progress{margin:0}
@@ -422,8 +418,6 @@ body.lsb-collapsed .lsb-item{justify-content:center;padding:11px 0}
 .step-pips i.on{background:var(--primary)}
 .unit-meta{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
 .syllabus-tag{display:inline-block;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--nav);color:#fff;letter-spacing:.03em;vertical-align:middle}
-.extra-tag{display:inline-block;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--violet-soft);color:var(--violet);letter-spacing:.03em;vertical-align:middle}
-.level-head{margin:22px 0 8px;font-size:.8rem;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);border:0}
 
 /* ---------- Topic workflow ---------- */
 .topic-head h1{margin:4px 0 6px;font-size:1.9rem}

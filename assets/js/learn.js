@@ -11,10 +11,9 @@
   let mounted = null; // active VizKit module
 
   const strip = h => String(h || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  const isSyllabus = t => !!t.unit;
   const stepIdx = id => STEPS.findIndex(s => s.id === id);
   const ago = ts => { const s = (Date.now() - ts) / 1000; if (s < 60) return "just now"; if (s < 3600) return Math.floor(s / 60) + " min ago"; if (s < 86400) return Math.floor(s / 3600) + " h ago"; return Math.floor(s / 86400) + " d ago"; };
-  const unitTag = t => isSyllabus(t) ? '<span class="syllabus-tag">' + A.unitById(t.unit).name + " · Syllabus</span>" : '<span class="extra-tag">Additional · ' + A.levelName(t.level) + "</span>";
+  const unitTag = t => '<span class="syllabus-tag">' + A.unitById(t.unit).name + " · Syllabus</span>";
   const pips = id => { const s = Progress.steps(id); return '<span class="step-pips" title="' + STEPS.filter(x => s[x.id]).map(x => x.label).join(", ") + '">' + STEPS.map(x => '<i class="' + (s[x.id] ? "on" : "") + '"></i>').join("") + "</span>"; };
   const status = id => { const p = Progress.topicPercent(id); return p === 100 ? "Completed" : p > 0 ? "In progress · " + p + "%" : "Not started"; };
   function firstOpenStep(id) { const s = Progress.steps(id); const st = STEPS.find(x => !s[x.id]); return st ? st.id : "theory"; }
@@ -43,51 +42,64 @@
     const ov = Progress.overall(), recent = Progress.recent().filter(r => A.topicById(r.id));
     const cont = recent[0] ? recent[0] : { id: A.sequence()[0].id, step: "theory" };
     const ct = A.topicById(cont.id);
-    const syl = A.topics().filter(isSyllabus);
-    const sylDone = syl.filter(t => Progress.isDone(t.id)).length;
     main.innerHTML = '<div class="fade-in">' +
-      '<div class="page-head"><div><span class="kicker">Learning dashboard</span><h1>Data Communication</h1><p>' + syl.length + " syllabus topics in four units, plus " + (ov.total - syl.length) + " additional networking lessons.</p></div></div>" +
+      '<div class="page-head"><div><span class="kicker">Learning dashboard</span><h1>Data Communication</h1><p>' + ov.total + " topics in four units, covering every point of the Unit I–IV course slides.</p></div></div>" +
       '<div class="split" style="margin-top:16px">' +
       '<div class="panel"><div class="overview"><div class="ring" style="--p:' + ov.pct + '"><b>' + ov.pct + '%</b></div><div class="meta">' +
       '<div class="kicker">' + (recent.length ? "Continue where you left off" : "Start here") + "</div>" +
       '<h3 style="margin:4px 0 2px">' + escapeHtml(ct.title) + "</h3>" +
       '<div class="muted" style="font-size:.88rem">' + unitTag(ct) + " &nbsp;" + A.STEPS[stepIdx(cont.step)].label + " step</div>" +
       '<a class="btn btn-primary" style="margin-top:12px" href="' + A.topicHref(ct.id, cont.step) + '">' + (recent.length ? "Continue learning" : "Begin Unit I") + " " + icon("arrowR", 16) + "</a></div></div>" +
-      '<p class="muted" style="font-size:.86rem;margin:14px 0 0">Syllabus topics completed: <b>' + sylDone + " / " + syl.length + "</b> · All topics completed: <b>" + ov.done + " / " + ov.total + "</b></p></div>" +
+      '<p class="muted" style="font-size:.86rem;margin:14px 0 0">Topics completed: <b>' + ov.done + " / " + ov.total + "</b></p></div>" +
       '<div class="panel"><h3><span class="hic">' + icon("clock", 18) + '</span>Recently studied</h3>' + (recent.length ? '<ul class="recent-list">' + recent.slice(0, 5).map(r => { const t = A.topicById(r.id); return '<li><a href="' + A.topicHref(r.id, r.step) + '"><span>' + escapeHtml(t.title) + "</span><small>" + ago(r.t) + "</small></a></li>"; }).join("") + "</ul>"
         : '<p class="muted" style="margin:0">Topics you open will appear here.</p>') + "</div></div>" +
       '<h2 style="margin-top:28px">Course units</h2>' +
       '<div class="panel" style="padding:4px 16px">' + UNITS.map(u => {
         const list = A.topicsInUnit(u.id), pct = Progress.unitPercent(u.id);
-        return '<a class="unit-row' + (u.id === "extra" ? " extra" : "") + '" href="#/unit/' + u.id + '"><span class="uic">' + icon(u.icon, 20) + "</span>" +
-          "<span><b>" + (u.id === "extra" ? "Additional Learning Topics" : u.name + " · " + u.title) + "</b><small>" + list.length + " topics · " + u.exam + "</small></span>" +
+        return '<a class="unit-row" href="#/unit/' + u.id + '"><span class="uic">' + icon(u.icon, 20) + "</span>" +
+          "<span><b>" + u.name + " · " + u.title + "</b><small>" + list.length + " topics · " + u.exam + "</small></span>" +
           '<span class="progress"><i style="width:' + pct + '%"></i></span><span class="pc">' + pct + "%</span></a>";
       }).join("") + "</div>" +
-      '<p class="muted" style="font-size:.88rem">Every topic follows the same path: <b>Theory → Visualize → Simulate → Quiz → Notes</b>. Units I–IV follow the college syllabus; Additional topics go beyond it into computer networking.</p>' +
+      '<p class="muted" style="font-size:.88rem">Every topic follows the same path: <b>Theory → Visualize → Simulate → Quiz → Notes</b>.</p>' +
+      courseOverview() +
       "</div>";
+  }
+
+  /* Course objectives, outcomes and assessment scheme (Unit I slides 2–4). */
+  function courseOverview() {
+    const OBJ = ["Build an understanding of the fundamental concepts of data communication.", "Differentiate between different types of transmission media.", "Classify digital codes for different networking applications.", "Explore the types of modulation techniques."];
+    const OUT = [["u1", "Identify the data communication type for a network infrastructure.", "L3"], ["u2", "Make use of suitable transmission media for a network application.", "L3"], ["u3", "Apply digital encoding and decoding techniques to real-world communication systems.", "L3"], ["u4", "Summarize the best suited modulation scheme and multiplexing method for real-time applications.", "L4"]];
+    return '<h2 style="margin-top:28px">Course overview</h2>' +
+      '<div class="split">' +
+      '<div class="panel"><h3><span class="hic">' + icon("target", 18) + '</span>Course objectives</h3><ol class="points">' + OBJ.map(x => "<li>" + x + "</li>").join("") + "</ol>" +
+      '<h3><span class="hic">' + icon("award", 18) + '</span>Course outcomes</h3><ol class="points">' + OUT.map(o => "<li>" + o[1] + ' <span class="pill">' + o[2] + '</span> <a href="#/unit/' + o[0] + '">' + A.unitById(o[0]).name + "</a></li>").join("") + "</ol></div>" +
+      '<div class="panel"><h3><span class="hic">' + icon("chart", 18) + '</span>Assessment scheme</h3>' +
+      '<div class="table-wrap"><table><thead><tr><th>Exam</th><th>Content</th><th>Marks distribution</th><th>Marks</th></tr></thead><tbody>' +
+      "<tr><td><b>MSE</b></td><td>Unit I and Unit II</td><td>Unit I – 10 · Unit II – 10</td><td>20</td></tr>" +
+      "<tr><td><b>ESE</b></td><td>Unit I to Unit IV</td><td>Unit I – 5 · Unit II – 5 · Unit III – 15 · Unit IV – 15</td><td>40</td></tr>" +
+      "<tr><td><b>IA</b></td><td>Unit I to Unit IV</td><td>Assignments (2) – 20 · Activities (2) – 10 · Attendance – 10</td><td>15</td></tr>" +
+      '<tr><td colspan="3"><b>Total</b></td><td><b>75</b></td></tr></tbody></table></div>' +
+      '<p class="muted" style="font-size:.86rem;margin-bottom:0">Teaching scheme: 2 lecture hours per week, no practical · 2 credits. Units III and IV carry 30 of the 40 ESE marks.</p></div></div>';
   }
 
   /* ---------------- Unit page ---------------- */
   function renderUnit(uid) {
     const u = A.unitById(uid), list = A.topicsInUnit(uid), pct = Progress.unitPercent(uid);
     A.setContext({ view: "unit", unit: uid, unitTitle: u.title });
-    document.title = (uid === "extra" ? "Additional Topics" : u.name + ": " + u.title) + " — NetLab";
+    document.title = u.name + ": " + u.title + " — NetLab";
     const nt = nextTopicIn(list);
     const item = (t, n) => '<a class="topic-item' + (Progress.isDone(t.id) ? " done" : "") + '" href="' + A.topicHref(t.id, firstOpenStep(t.id)) + '">' +
       '<span class="num">' + (Progress.isDone(t.id) ? icon("check", 14) : n) + "</span>" +
       "<span><b>" + escapeHtml(t.title) + "</b><small>" + escapeHtml(t.summary || "") + "</small></span>" + pips(t.id) +
       '<span class="st">' + status(t.id) + "<br>" + (t.minutes || 8) + " min</span></a>";
-    let body;
-    if (uid === "extra") body = A.LEVELS.map(l => '<h3 class="level-head">' + l.name + '</h3><div class="topic-list">' + list.filter(t => t.level === l.id).map((t, i) => item(t, i + 1)).join("") + "</div>").join("");
-    else body = '<div class="topic-list">' + list.map((t, i) => item(t, i + 1)).join("") + "</div>";
+    const body = '<div class="topic-list">' + list.map((t, i) => item(t, i + 1)).join("") + "</div>";
     main.innerHTML = '<div class="fade-in">' +
-      '<div class="breadcrumb"><a href="#/">Dashboard</a> › ' + (uid === "extra" ? "Additional Topics" : u.name) + "</div>" +
-      '<div class="page-head"><div><span class="kicker">' + (uid === "extra" ? "Beyond the syllabus" : u.name + " · College syllabus") + "</span><h1>" + escapeHtml(u.title) + "</h1><p>" + escapeHtml(u.desc) + "</p></div>" +
+      '<div class="breadcrumb"><a href="#/">Dashboard</a> › ' + u.name + "</div>" +
+      '<div class="page-head"><div><span class="kicker">' + u.name + " · College syllabus</span><h1>" + escapeHtml(u.title) + "</h1><p>" + escapeHtml(u.desc) + "</p></div>" +
       '<a class="btn btn-primary" href="' + A.topicHref(nt.id, firstOpenStep(nt.id)) + '">' + (pct ? "Continue unit" : "Start unit") + " " + icon("arrowR", 16) + "</a></div>" +
       '<div class="panel"><div class="overview"><div class="ring" style="--p:' + pct + '"><b>' + pct + '%</b></div><div class="meta">' +
       "<div><b>" + list.filter(t => Progress.isDone(t.id)).length + " of " + list.length + "</b> topics completed</div>" +
       '<div class="unit-meta"><span class="pill">' + icon("award", 14) + " " + u.exam + '</span><span class="pill">' + icon("target", 14) + " " + escapeHtml(u.outcome) + "</span></div></div></div></div>" +
-      (uid === "extra" ? '<div class="note info"><span class="note-title">Additional learning</span><p>These lessons are not part of the four-unit syllabus. They cover wider computer-networking topics (OSI, TCP/IP, IP addressing, routing, DNS, security…) and are marked <span class="extra-tag">Additional</span> everywhere on the site.</p></div>' : "") +
       body + "</div>";
   }
 
@@ -100,7 +112,7 @@
     const done = Progress.steps(id);
     const si = stepIdx(step), st = STEPS[si];
     main.innerHTML = '<div class="fade-in">' +
-      '<div class="breadcrumb"><a href="#/">Dashboard</a> › <a href="#/unit/' + u.id + '">' + (u.id === "extra" ? "Additional Topics" : u.name) + "</a> › " + escapeHtml(t.title) + "</div>" +
+      '<div class="breadcrumb"><a href="#/">Dashboard</a> › <a href="#/unit/' + u.id + '">' + u.name + "</a> › " + escapeHtml(t.title) + "</div>" +
       '<div class="topic-head">' + unitTag(t) + " <span class=\"muted\" style=\"font-size:.85rem\">" + icon("clock", 13) + " " + (t.minutes || 8) + " min</span>" +
       "<h1>" + escapeHtml(t.title) + '</h1><p class="sum">' + escapeHtml(t.summary || "") + "</p></div>" +
       '<nav class="stepper" aria-label="Topic steps">' + STEPS.map((s, k) => '<a href="' + A.topicHref(id, s.id) + '" class="' + (s.id === step ? "active " : "") + (done[s.id] ? "done" : "") + '"' + (s.id === step ? ' aria-current="step"' : "") + ">" +
@@ -127,35 +139,25 @@
       '<div class="seg" role="group" aria-label="Explanation depth"><button data-d="simple" class="' + (depth === "simple" ? "on" : "") + '">Simple</button><button data-d="deep" class="' + (depth === "deep" ? "on" : "") + '">Detailed</button></div></div>' +
       '<div id="theory"></div>';
     const out = body.querySelector("#theory");
+    const rel = (t.related || []).map(A.topicById).filter(Boolean);
     function draw(d) {
-      if (isSyllabus(t)) {
-        const deep = d === "deep";
-        out.innerHTML =
-          sec("Introduction", t.intro) +
-          sec("Definition", '<div class="definition">' + t.definition + "</div>") +
-          sec("Why it matters", t.why) +
-          sec("How it works", t.how) +
-          (deep ? sec("Detailed explanation", t.deep) : "") +
-          (t.diagram ? sec("Diagram", t.diagram) : "") +
-          sec("Real-world examples", list(t.examples)) +
-          sec("Key terminology", t.terms && t.terms.length ? '<div class="keyterms">' + t.terms.map(x => "<div><b>" + x[0] + "</b><span>" + x[1] + "</span></div>").join("") + "</div>" : "") +
-          (t.pros || t.cons ? sec("Advantages and disadvantages", '<div class="pc-grid">' + (t.pros ? '<div class="pros"><h3>Advantages</h3>' + list(t.pros) + "</div>" : "") + (t.cons ? '<div class="cons"><h3>Disadvantages</h3>' + list(t.cons) + "</div>" : "") + "</div>") : "") +
-          (deep && t.compare ? sec("Comparison", table(t.compare)) : "") +
-          (t.syllabusNote ? '<div class="syllabus-note"><b>Note on the course slides:</b> ' + t.syllabusNote + "</div>" : "") +
-          sec("Important exam points", '<div class="exam-box"><h3>' + icon("award", 16) + " Remember for the exam</h3><ol>" + (t.exam || []).map(x => "<li>" + x + "</li>").join("") + "</ol></div>") +
-          sec("Summary", '<div class="note tip"><p>' + t.recap + "</p></div>") +
-          (t.related && t.related.length ? '<p class="muted" style="font-size:.9rem">Related additional lessons: ' + t.related.filter(A.topicById).map(r => '<a href="' + A.topicHref(r) + '">' + escapeHtml(A.topicById(r).title) + "</a>").join(", ") + "</p>" : "") +
-          (t.source ? '<p class="src-note">Syllabus source: ' + escapeHtml(t.source) + "</p>" : "");
-      } else {
-        const n = t.notes || { points: [], revision: [] };
-        out.innerHTML = d === "deep" ? '<div class="lesson">' + t.body + "</div>" :
-          sec("In short", '<p class="lead">' + escapeHtml(t.summary || "") + "</p>") +
-          sec("Definition", '<div class="definition">' + escapeHtml(n.definition || "") + "</div>") +
-          sec("Key points", list(n.points.map(escapeHtml))) +
-          (n.compare ? sec("Comparison", table(n.compare)) : "") +
-          sec("Summary", '<div class="revision"><h4>Quick revision</h4>' + list(n.revision.map(escapeHtml)) + "</div>") +
-          '<p class="muted" style="font-size:.9rem">Switch to <b>Detailed</b> for the full lesson with examples and diagrams.</p>';
-      }
+      const deep = d === "deep";
+      out.innerHTML =
+        sec("Introduction", t.intro) +
+        sec("Definition", '<div class="definition">' + t.definition + "</div>") +
+        sec("Why it matters", t.why) +
+        sec("How it works", t.how) +
+        (deep ? sec("Detailed explanation", t.deep) : "") +
+        (t.diagram ? sec("Diagram", t.diagram) : "") +
+        sec("Real-world examples", list(t.examples)) +
+        sec("Key terminology", t.terms && t.terms.length ? '<div class="keyterms">' + t.terms.map(x => "<div><b>" + x[0] + "</b><span>" + x[1] + "</span></div>").join("") + "</div>" : "") +
+        (t.pros || t.cons ? sec("Advantages and disadvantages", '<div class="pc-grid">' + (t.pros ? '<div class="pros"><h3>Advantages</h3>' + list(t.pros) + "</div>" : "") + (t.cons ? '<div class="cons"><h3>Disadvantages</h3>' + list(t.cons) + "</div>" : "") + "</div>") : "") +
+        (deep && t.compare ? sec("Comparison", table(t.compare)) : "") +
+        (t.syllabusNote ? '<div class="syllabus-note"><b>Note on the course slides:</b> ' + t.syllabusNote + "</div>" : "") +
+        sec("Important exam points", '<div class="exam-box"><h3>' + icon("award", 16) + " Remember for the exam</h3><ol>" + (t.exam || []).map(x => "<li>" + x + "</li>").join("") + "</ol></div>") +
+        sec("Summary", '<div class="note tip"><p>' + t.recap + "</p></div>") +
+        (rel.length ? '<p class="muted" style="font-size:.9rem">Related topics: ' + rel.map(r => '<a href="' + A.topicHref(r.id) + '">' + escapeHtml(r.title) + "</a>").join(", ") + "</p>" : "") +
+        (t.source ? '<p class="src-note">Syllabus source: ' + escapeHtml(t.source) + "</p>" : "");
       out.querySelectorAll("canvas[data-viz]").forEach(c => c.remove());
     }
     draw(depth);
@@ -191,21 +193,17 @@
   }
 
   function notePoints(t) {
-    if (isSyllabus(t)) {
-      return {
-        definition: strip(t.definition),
-        points: (t.exam || []).map(strip),
-        terms: (t.terms || []).map(x => strip(x[0]) + " — " + strip(x[1])),
-        pros: (t.pros || []).map(strip), cons: (t.cons || []).map(strip),
-        compare: t.compare, recap: strip(t.recap)
-      };
-    }
-    const n = t.notes || { points: [], revision: [] };
-    return { definition: n.definition, points: n.points, terms: [], pros: [], cons: [], compare: n.compare, recap: (n.revision || []).join(" · ") };
+    return {
+      definition: strip(t.definition),
+      points: (t.exam || []).map(strip),
+      terms: (t.terms || []).map(x => strip(x[0]) + " — " + strip(x[1])),
+      pros: (t.pros || []).map(strip), cons: (t.cons || []).map(strip),
+      compare: t.compare, recap: strip(t.recap)
+    };
   }
   function notesText(t) {
     const n = notePoints(t), L = [];
-    L.push(t.title.toUpperCase(), (isSyllabus(t) ? A.unitById(t.unit).name + " (syllabus)" : "Additional topic"), "");
+    L.push(t.title.toUpperCase(), A.unitById(t.unit).name + ": " + A.unitById(t.unit).title, "");
     L.push("DEFINITION", n.definition, "", "KEY POINTS"); n.points.forEach(p => L.push("- " + p));
     if (n.terms.length) { L.push("", "TERMINOLOGY"); n.terms.forEach(p => L.push("- " + p)); }
     if (n.pros.length) { L.push("", "ADVANTAGES"); n.pros.forEach(p => L.push("+ " + p)); }
@@ -253,7 +251,7 @@
     A.setContext({ view: "progress" });
     document.title = "My Learning Progress — NetLab";
     const ov = Progress.overall(), q = Progress.quiz();
-    const quizKeys = Object.keys(q);
+    const quizKeys = Object.keys(q).filter(k => A.topicById(k) || examName(k)); // ignore scores of removed lessons/tests
     const avg = quizKeys.length ? Math.round(quizKeys.reduce((s, k) => s + q[k].best, 0) / quizKeys.length) : 0;
     const modules = window.VizKit ? VizKit.all() : [];
     const explored = Progress.viz().filter(id => modules.some(m => m.id === id)).length;
@@ -267,7 +265,7 @@
       '<div class="stat"><div class="num">' + explored + " / " + modules.length + '</div><div class="lbl">Visualizations &amp; simulations explored</div></div></div>' +
       "<h2>By unit</h2>" + UNITS.map(u => {
         const l = A.topicsInUnit(u.id);
-        return '<div class="panel"><div class="row" style="justify-content:space-between"><h3 style="margin:0">' + (u.id === "extra" ? "Additional Topics" : u.name + " · " + escapeHtml(u.title)) + '</h3><a href="#/unit/' + u.id + '">' + Progress.unitPercent(u.id) + "% →</a></div>" +
+        return '<div class="panel"><div class="row" style="justify-content:space-between"><h3 style="margin:0">' + u.name + " · " + escapeHtml(u.title) + '</h3><a href="#/unit/' + u.id + '">' + Progress.unitPercent(u.id) + "% →</a></div>" +
           '<div class="table-wrap"><table><thead><tr><th>Topic</th><th>Steps done</th><th>Quiz best</th><th>Status</th></tr></thead><tbody>' +
           l.map(t => "<tr><td><a href=\"" + A.topicHref(t.id, firstOpenStep(t.id)) + "\">" + escapeHtml(t.title) + "</a></td><td>" + pips(t.id) + "</td><td>" + (q[t.id] ? q[t.id].best + "% <small class=\"muted\">(" + q[t.id].attempts + "×)</small>" : "—") + "</td><td>" + status(t.id) + "</td></tr>").join("") +
           "</tbody></table></div></div>";
@@ -281,10 +279,9 @@
     };
   }
   function examName(k) {
-    if (k === "mixed") return "Mixed challenge (all topics)";
-    if (k.indexOf("level-") === 0) return A.levelName(k.slice(6)) + " level test (Additional)";
-    if (k.indexOf("exam:") === 0) { const p = k.slice(5); const u = A.unitById(p); return u ? (u.id === "extra" ? "Additional topics test" : u.name + " unit test") : p === "syllabus" ? "Full syllabus test" : p; }
-    return k;
+    if (k === "mixed") return "Quick mixed challenge";
+    if (k.indexOf("exam:") === 0) { const p = k.slice(5); const u = A.unitById(p); return u ? u.name + " unit test" : ({ syllabus: "Full syllabus test", mse: "MSE practice (Units I and II)", ese34: "ESE focus (Units III and IV)" })[p] || null; }
+    return null;
   }
 
   window.addEventListener("hashchange", route);

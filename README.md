@@ -1,15 +1,15 @@
 # NetLab — Data Communication
 
-An interactive learning site for an undergraduate **Data Communication** course. Every topic follows the same five-step path:
+An interactive learning site for an undergraduate **Data Communication** course. It covers exactly the four course units (the Unit I–IV slide PDFs) in detail — nothing outside the syllabus. Every topic follows the same five-step path:
 
 **Theory → Visualize → Simulate → Quiz → Notes**
 
 | Content | Count |
 |---|---|
-| Syllabus topics (Units I–IV, from the course PDFs) | 41 |
-| Additional networking topics (the original NetLab lessons, all kept) | 24 |
-| Visualizations and simulations | 103 |
-| Quiz questions (each tagged easy / medium / hard) | 342 |
+| Topics (Units I–IV, from the course PDFs) | 41 |
+| Visualizations and simulations | 77 |
+| Quiz questions (each tagged easy / medium / hard) | 246 |
+| Practice exercises (Units I–IV) | 9 |
 
 The site is plain HTML, CSS and JavaScript with no build step. A small optional Node server adds the AI study assistant.
 
@@ -75,8 +75,8 @@ npm test                     # unit tests for the simulation maths (assets/js/si
 
 ### Learn (`learn.html`)
 
-- **Dashboard** (`#/`): overall progress, a continue button, recent topics, and each unit's progress.
-- **Unit page** (`#/unit/u1` … `#/unit/extra`):
+- **Dashboard** (`#/`): overall progress, a continue button, recent topics, each unit's progress, and the **course overview** (objectives, outcomes and the MSE / ESE / IA assessment scheme from the slides).
+- **Unit page** (`#/unit/u1` … `#/unit/u4`):
   - exam weight and learning outcome;
   - every topic with its step progress and completion status;
   - a continue button.
@@ -97,46 +97,38 @@ npm test                     # unit tests for the simulation maths (assets/js/si
      - an upload link;
      - Previous / **Mark complete** / Next.
 - **Course sidebar**:
-  - Units I–IV and Additional Topics, each expandable;
+  - Units I–IV, each expandable;
   - a status dot for every topic;
   - Study Notes and My Learning Progress;
   - collapses to icons on desktop and becomes a drawer on phones.
 - **My Learning Progress** (`#/progress`): per-unit tables, quiz bests, modules explored, and reset.
 
-Syllabus topics are tagged **Unit N · Syllabus**. The original lessons are tagged **Additional** wherever they appear.
+Every topic is tagged **Unit N · Syllabus** and lists its slide source.
 
 ### Visualization Studio (`visualizer.html`)
 
-- All 103 modules, filterable by text and type.
-- A "Core labs" list covering:
-  - data transmission, topologies, OSI and encapsulation;
-  - packet formation, TCP/UDP and the handshake;
-  - DNS, DHCP, routing and switching;
-  - digital encoding, AM/FM/PM, and FSK/BPSK/QPSK/QAM;
-  - FDM/TDM, optical fibre, media comparison, and error detection with noise.
+- All 77 modules, grouped by unit and filterable by text and type.
+- A "Core labs" list with the key simulations of each unit:
+  - Unit I: data transmission, simplex/half/full-duplex, serial vs parallel, modem modulation;
+  - Unit II: twisted-pair noise, optical fibre, wireless path loss, choosing a medium;
+  - Unit III: ASCII and EBCDIC encoders, crosstalk, transients;
+  - Unit IV: AM/FM/PM, ASK/FSK/PSK/QAM, FDM and TDM, the T1 carrier.
 - `visualizer.html#<module-id>` opens a module directly. Each module page links back to the lessons that use it.
-- The **Packet Formation Lab** (`s-packet`):
-  - builds a real Ethernet + IPv4 + TCP/UDP frame from your values;
-  - the field table and hex dump are linked;
-  - the IPv4 and TCP/UDP checksums and CRC-32 FCS are computed, and the IP checksum is verified;
-  - it has a 9-step encapsulation → decapsulation view;
-  - it is labelled *simulated, not captured traffic*.
 
 ### Exams (`quiz.html`)
 
-- Unit tests for Units I–IV, a full syllabus test, a mixed challenge, Additional level tests, and every topic quiz.
-- Old links such as `quiz.html#dns` still work.
+- Unit tests for Units I–IV, a full syllabus test, a quick mixed challenge, **MSE practice** (Units I–II) and **ESE focus** (Units III–IV), and every topic quiz.
 
 ### Practice (`exercises.html`)
 
-The original eight generated exercises, unchanged.
+Nine generated exercises, all from the units: transmission modes and LAN/MAN/WAN (Unit I); matching transmission media (Unit II); binary conversion, ASCII/EBCDIC encoding and naming line impairments (Unit III); naming modulation and multiplexing techniques and a TDM/T1 frame calculator (Unit IV).
 
 ### Study Notes (`notes.html`)
 
 | Tab | Contents |
 |---|---|
 | College syllabus notes | definition, key points, comparison and summary for all 41 syllabus topics; printable |
-| Topic notes | notes for the Additional topics, plus the formula and port cheat sheet |
+| Quick revision sheet | the key facts, values and comparison tables of all four units on one printable page |
 | Uploaded files | **UPLOAD STUDY MATERIAL**: PDF, PPTX, DOCX, TXT or MD, up to 30 MB each |
 | Generated notes | **Quick revision** or **Detailed** notes from any upload; edit, save, download and print |
 | Personal notes | saved points and your notes from every topic; download all |
@@ -196,22 +188,19 @@ quiz.html           Exams (exams.js)
 exercises.html      Practice (exercises.js)
 notes.html          Study Notes (notes-app.js, doc-parser.js, notes-generator.js)
 tutorials.html      redirect: tutorials.html#id → learn.html#/topic/id/theory
-server.mjs          static server + AI API (Node, @anthropic-ai/sdk)
-api/ai/status       static stub so plain static hosting reports "no backend" cleanly
+server.mjs          static server + AI API (Node); AI logic in lib/ai.mjs
+api/ai/*.mjs        the same AI API as Vercel functions
 
 assets/js/
   app.js            shell, icons, units/steps model, Progress (localStorage), course sidebar, search
-  topics-*.js       24 Additional lessons (original content, unchanged)
   syllabus-u1..u4   41 syllabus topics (structured fields) + their quiz questions
-  quiz-data.js      original 96 questions (+ difficulty tags)
   quiz-engine.js    reusable MCQ runner (lesson quiz step + Exams)
   sim-logic.js      pure, tested maths: modulation, constellations, media loss, fibre,
                     satellite orbits, delays, codes (ASCII/EBCDIC/BCD/Gray/UTF-8), parity,
                     CRC, Internet checksum, CRC-32, packet builder, subnetting, TDM/FDM, T1, WDM
   viz-core.js       VizKit: drawing kit + engines (timeline, flow, waves, controls) + registry
-  viz-network.js    original 12 simulations, ported to the registry
+  viz-network.js    the Data Transmission simulation (Unit I)
   viz-u1..u4.js     Unit I–IV visualizations and simulations
-  viz-extra.js      networking modules + Visualize/Simulate mapping for Additional topics
   doc-store.js      IndexedDB store + passage search (BM25-style) with page references
   doc-parser.js     PDF / PPTX / DOCX / TXT / MD text extraction with validation
   notes-generator.js extractive notes with page references
@@ -239,7 +228,7 @@ tests/              sim-logic unit tests, harness.html (mounts/exercises any mod
 | `ANTHROPIC_API_KEY` | no (paid) | — | Claude API key. Read **only** by `server.mjs`. Placeholder or malformed keys are detected and ignored |
 | `NETLAB_MODEL` | no | `claude-opus-5-5` | Claude model id |
 | `PORT` | no | `5050` | Server port |
-| `HOST` | no | `127.0.0.1` | Bind address (use `0.0.0.0` to expose on a network) |
+| `HOST` | no | `127.0.0.1` (`0.0.0.0` on Render) | Bind address (use `0.0.0.0` to expose on a network) |
 
 Put these in `.env`. It is in `.gitignore`, and the server refuses to serve `.env*`, `server.mjs`, `package*.json` and `node_modules`.
 

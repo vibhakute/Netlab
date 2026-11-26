@@ -7,7 +7,7 @@ window.QUIZ = window.QUIZ || [];
 {
   id: "u1-intro", unit: "u1", title: "Introduction to Data Communication", minutes: 8,
   summary: "What data communication is, what it is concerned with, and the protocols (TCP and IP) that every Internet device follows.",
-  source: "Unit I slides 7–10, 13", related: ["intro"],
+  source: "Unit I slides 7–10, 13", related: ["u1-components", "u1-criteria"],
   intro: "<p>Sending a WhatsApp message, joining a video call, paying with UPI or loading a web page all involve the same thing: <b>data moving from one device to another</b>. Data communication is the study of how that movement happens reliably.</p>",
   definition: "Data communication is the transfer of data or information between a source and a receiver — two or more devices, systems or places — over a transmission medium, following agreed rules called protocols.",
   why: "<p>Computing and telecommunications both depend on data transmission. Email, video chatting and the Internet would not exist without it. Its purpose is to provide the <b>rules and regulations (protocols and standards)</b> that let computers with different operating systems, languages, cabling and locations share resources.</p>",
@@ -42,7 +42,7 @@ window.QUIZ = window.QUIZ || [];
 {
   id: "u1-components", unit: "u1", title: "Components of Data Communication", minutes: 7,
   summary: "The five components every communication system needs — message, sender, receiver, transmission medium and protocol — and why the protocol matters.",
-  source: "Unit I slides 11–13", related: ["components"],
+  source: "Unit I slides 11–13", related: [],
   intro: "<p>Every communication system, from a phone call to the Internet, is built from the same five parts. If any one of them is missing, communication fails.</p>",
   definition: "A data communication system consists of five components: the message, the sender, the receiver, the transmission medium (communication channel) and the set of rules (protocol).",
   why: "<p>Knowing the components lets you diagnose problems — is the fault in the device, the cable, or a rule mismatch? It is also the base for every later topic: transmission media (Unit II), codes (Unit III) and modulation (Unit IV).</p>",
@@ -78,7 +78,7 @@ window.QUIZ = window.QUIZ || [];
 {
   id: "u1-modes", unit: "u1", title: "Transmission Modes: Simplex, Half-Duplex and Full-Duplex", minutes: 9,
   summary: "The three directions of data flow between two devices, how they use the channel, and where each is used.",
-  source: "Unit I slides 14–19", related: ["data-flow"],
+  source: "Unit I slides 14–19", related: [],
   intro: "<p>When two devices are connected, who is allowed to talk, and when? The <b>transmission mode</b> (also called the communication mode or type of data communication) answers this.</p>",
   definition: "Transmission mode is the direction of data flow between two connected devices. There are three types: simplex (one-way), half-duplex (two-way, one at a time) and full-duplex (two-way, simultaneously).",
   why: "<p>The mode decides how fast two parties can exchange data and how the channel's bandwidth is used. Choosing the wrong mode either wastes capacity or makes interaction impossible — imagine a phone call where only one person could ever speak.</p>",
@@ -115,7 +115,7 @@ window.QUIZ = window.QUIZ || [];
 {
   id: "u1-serial-parallel", unit: "u1", title: "Data Transfer Modes: Serial and Parallel", minutes: 8,
   summary: "Sending bits one after another on a single line versus many bits at once on separate lines — speed, cost, distance and crosstalk.",
-  source: "Unit I slides 20–21", related: ["transmission"],
+  source: "Unit I slides 20–21", related: [],
   intro: "<p>A byte has 8 bits. Should they travel <b>one after another</b> down one wire, or <b>side by side</b> down eight wires? These are the two data transfer modes.</p>",
   definition: "In serial communication data is transmitted bit by bit, sequentially, over a single wire or channel. In parallel communication multiple bits are transmitted simultaneously over separate wires or channels.",
   why: "<p>The choice decides the cost of cabling, the maximum distance and the achievable speed of a link. It explains why almost every modern external connection (USB, Ethernet, SATA) is serial.</p>",
@@ -149,7 +149,7 @@ window.QUIZ = window.QUIZ || [];
 {
   id: "u1-telecom", unit: "u1", title: "Role of Telecommunications: Local Loop, LAN, MAN and WAN", minutes: 10,
   summary: "How the telecom industry and computer networking merged, the local loop (last mile), and the three network scales: LAN, MAN and WAN.",
-  source: "Unit I slides 7, 22–30", related: ["network-types"],
+  source: "Unit I slides 7, 22–30", related: [],
   intro: "<p>What do telephones have to do with networking? A lot. The telecom industry and the computer industry have gradually merged, and their common goal is to join distant <b>Local Area Networks</b> into <b>Metropolitan</b> and <b>Wide Area Networks</b>.</p>",
   definition: "Telecommunications provides the infrastructure and technology for communication over distance. The local loop is the subscriber's “last mile” connection to the telephone exchange; LANs, MANs and WANs are networks of increasing geographic scale.",
   why: "<p>Telecom networks are the foundation of the Internet. They carry voice, data and video between users and organisations, drive innovation and keep communication reliable. Knowing the network scales tells you which technologies, speeds and costs to expect.</p>",

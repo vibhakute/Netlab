@@ -43,7 +43,7 @@ window.QUIZ = window.QUIZ || [];
 {
   id: "u3-ascii", unit: "u3", title: "ASCII — American Standard Code for Information Interchange", minutes: 9,
   summary: "The 7-bit character code behind almost all text: the table structure, extended ASCII, and how text is encoded, transmitted and decoded.",
-  source: "Unit III slides 15–20", related: ["data-flow"],
+  source: "Unit III slides 15–20", related: ["u3-ebcdic", "u3-codes"],
   intro: "<p>When you type “Hi” and press Send, your keyboard and computer turn each letter into a number using <b>ASCII</b>. Every PC, phone and network device understands it.</p>",
   definition: "ASCII (American Standard Code for Information Interchange) is a character-encoding standard that assigns unique numerical values to letters, digits, punctuation marks and control characters, enabling computers to store, process and exchange text. Standard ASCII uses 7 bits (128 characters).",
   why: "<p>ASCII is the foundation of text-based data communication. It gives systems a common language, ensures compatibility between different systems, and is the basis of Unicode (UTF-8 is backward-compatible with ASCII).</p>",
@@ -294,7 +294,7 @@ window.QUIZ = window.QUIZ || [];
 {
   id: "u3-jitter", unit: "u3", title: "Jitter: Amplitude and Phase", minutes: 9,
   summary: "What jitter is, its causes and impact on real-time traffic, and the two types — amplitude jitter and phase jitter — with telephone standards.",
-  source: "Unit III slides 63–66", related: ["intro"],
+  source: "Unit III slides 63–66", related: ["u1-intro", "u3-transients"],
   intro: "<p>Video calls freeze, voices sound robotic — even when the average delay is fine. The culprit is often <b>jitter</b>: delay that keeps changing.</p>",
   definition: "Jitter is the variation in latency over time — the inconsistency of delay, or variability in packet arrival times. On analog lines it appears as small, constantly changing swings in a signal's amplitude (amplitude jitter) or phase (phase jitter).",
   why: "<p>Jitter is measured in milliseconds and directly affects real-time communication. High jitter causes packet loss, poor audio and video quality and streaming interruptions, so it is a key performance objective for real-time networks.</p>",

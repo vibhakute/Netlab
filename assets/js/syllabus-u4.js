@@ -163,7 +163,7 @@ window.QUIZ = window.QUIZ || [];
 {
   id: "u4-mux", unit: "u4", title: "Introduction to Multiplexing", minutes: 7,
   summary: "Sharing one medium among many signals with a multiplexer (MUX) and demultiplexer (DEMUX), and the types: FDM, TDM (synchronous and statistical) and WDM.",
-  source: "Unit IV slides 27–29", related: ["multiplexing"],
+  source: "Unit IV slides 27–29", related: ["u4-fdm", "u4-tdm", "u4-wdm"],
   intro: "<p>Laying a separate cable for every phone call or TV channel would be absurdly expensive. <b>Multiplexing</b> lets many signals share one link.</p>",
   definition: "Multiplexing is the sharing of a medium or bandwidth: multiple signals from multiple sources are combined and transmitted over a single communication line. A multiplexer (MUX) takes n input lines and generates a single output line; a demultiplexer (DEMUX) takes the single line and generates n output lines.",
   why: "<p>High-capacity links (fibre, coax, microwave) have far more capacity than one user needs. Multiplexing uses that capacity efficiently, reducing cost per channel. It is how telephone trunks, cable TV and fibre backbones work.</p>",

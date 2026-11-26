@@ -76,10 +76,8 @@
     { id: "u1", name: "Unit I", title: "Introduction to Data Communication", icon: "net", exam: "MSE 10 marks · ESE 5 marks", outcome: "Identify the data communication type for a network infrastructure.", desc: "Components, transmission modes, serial and parallel transfer, the local loop, LAN/MAN/WAN, network criteria and modems." },
     { id: "u2", name: "Unit II", title: "Transmission Media", icon: "cable", exam: "MSE 10 marks · ESE 5 marks", outcome: "Make use of suitable transmission media for a network application.", desc: "Guided media (twisted pair, coax, fibre, stripline), unguided media (radio, microwave, infrared, satellite), 5G, IoT, secure and high-speed optical media." },
     { id: "u3", name: "Unit III", title: "Digital Codes and Communications", icon: "binary", exam: "ESE 15 marks", outcome: "Apply digital encoding and decoding techniques to real-world communication systems.", desc: "BCD, Gray, ASCII, EBCDIC and Unicode; voice channels and the telephone network; line impairments, crosstalk, echo, jitter and transients." },
-    { id: "u4", name: "Unit IV", title: "Modulation and Multiplexing", icon: "wave", exam: "ESE 15 marks", outcome: "Choose the best suited modulation scheme and multiplexing method for real-time applications.", desc: "AM, FM, PM, ASK, FSK, BPSK, QPSK, DPSK and QAM; FDM, synchronous and statistical TDM, FDM channel groups, the T1 carrier and WDM." },
-    { id: "extra", name: "Additional", title: "Additional Learning Topics", icon: "layers", exam: "Beyond the syllabus", outcome: "Go wider into computer networking.", desc: "OSI and TCP/IP models, topologies, devices, IP addressing, subnetting, routing, switching, TCP/UDP, DNS, DHCP, HTTP(S), security and wireless." }
+    { id: "u4", name: "Unit IV", title: "Modulation and Multiplexing", icon: "wave", exam: "ESE 15 marks", outcome: "Choose the best suited modulation scheme and multiplexing method for real-time applications.", desc: "AM, FM, PM, ASK, FSK, BPSK, QPSK, DPSK and QAM; FDM, synchronous and statistical TDM, FDM channel groups, the T1 carrier and WDM." }
   ];
-  const LEVELS = [{ id: "beginner", name: "Beginner" }, { id: "intermediate", name: "Intermediate" }, { id: "advanced", name: "Advanced" }];
   const STEPS = [
     { id: "theory", label: "Theory", icon: "book", next: "NEXT: VISUALIZE THIS CONCEPT" },
     { id: "viz", label: "Visualize", icon: "eye", next: "NEXT: INTERACTIVE SIMULATION" },
@@ -88,16 +86,15 @@
     { id: "notes", label: "Notes", icon: "notes", next: "" }
   ];
 
-  function topics() { return window.TOPICS || []; }
+  // Only the four syllabus units are part of the course.
+  function topics() { return (window.TOPICS || []).filter(t => t.unit && UNITS.some(u => u.id === t.unit)); }
   function topicById(id) { return topics().find(t => t.id === id); }
-  function unitOf(t) { return t ? (t.unit || "extra") : "extra"; }
+  function unitOf(t) { return t ? t.unit : null; }
   function unitById(id) { return UNITS.find(u => u.id === id); }
   function topicsInUnit(u) { return topics().filter(t => unitOf(t) === u); }
   function sequence() { return UNITS.reduce((acc, u) => acc.concat(topicsInUnit(u.id)), []); }
   function neighbours(id) { const s = sequence(), i = s.findIndex(t => t.id === id); return { prev: s[i - 1] || null, next: s[i + 1] || null, index: i, total: s.length }; }
-  function levelName(id) { const l = LEVELS.find(x => x.id === id); return l ? l.name : id; }
-  function badge(level) { return '<span class="badge lvl-' + level + '">' + levelName(level) + "</span>"; }
-  function unitBadge(t) { const u = unitById(unitOf(t)); return u.id === "extra" ? badge(t.level) : '<span class="badge lvl-unit">' + u.name + "</span>"; }
+  function unitBadge(t) { const u = unitById(unitOf(t)); return u ? '<span class="badge lvl-unit">' + u.name + "</span>" : ""; }
   function topicHref(id, step) { return "learn.html#/topic/" + encodeURIComponent(id) + "/" + (step || "theory"); }
 
   /* ---------- Progress ---------- */
@@ -231,16 +228,10 @@
     const group = u => {
       const list = topicsInUnit(u.id);
       const isOpen = !!open[u.id];
-      let inner;
-      if (u.id === "extra") {
-        inner = LEVELS.map(l => '<div class="lsb-sub">' + l.name + "</div>" + list.filter(t => t.level === l.id).map(t =>
-          '<a class="lsb-topic' + (t.id === opts.topic ? " active" : "") + '" href="' + topicHref(t.id) + '">' + dot(t.id) + "<span>" + t.title + "</span></a>").join("")).join("");
-      } else {
-        inner = list.map((t, i) => '<a class="lsb-topic' + (t.id === opts.topic ? " active" : "") + '" href="' + topicHref(t.id) + '">' + dot(t.id) + "<span>" + (i + 1) + ". " + t.title + "</span></a>").join("");
-      }
+      const inner = list.map((t, i) => '<a class="lsb-topic' + (t.id === opts.topic ? " active" : "") + '" href="' + topicHref(t.id) + '">' + dot(t.id) + "<span>" + (i + 1) + ". " + t.title + "</span></a>").join("");
       return '<div class="lsb-group' + (isOpen ? " open" : "") + '" data-unit="' + u.id + '">' +
         '<button class="lsb-item lsb-unit' + (activeUnit === u.id ? " current" : "") + '" aria-expanded="' + isOpen + '" title="' + u.name + ": " + u.title + '">' + icon(u.icon, 18) +
-        '<span class="lsb-unit-text"><b>' + (u.id === "extra" ? "Additional Topics" : u.name) + "</b><small>" + (u.id === "extra" ? list.length + " networking lessons" : u.title) + "</small></span>" +
+        '<span class="lsb-unit-text"><b>' + u.name + "</b><small>" + u.title + "</small></span>" +
         '<em class="lsb-pct">' + Progress.unitPercent(u.id) + '%</em><span class="lsb-chev">' + icon("chevron", 14) + "</span></button>" +
         '<div class="lsb-topics">' + inner + "</div></div>";
     };
@@ -278,17 +269,18 @@
 
   /* ---------- Search ---------- */
   const EXERCISES = [
-    ["Subnet Calculator Challenge", "exercises.html#subnet"], ["Binary / Decimal Converter", "exercises.html#binary"],
-    ["IP Class Identifier", "exercises.html#ipclass"], ["Parity Bit Calculator", "exercises.html#parity"],
-    ["Order the OSI Layers", "exercises.html#osiorder"], ["Match Protocols to Ports", "exercises.html#ports"],
-    ["Device to Layer Match", "exercises.html#devices"], ["Mesh Topology Calculator", "exercises.html#mesh"]
+    ["Transmission Mode Identifier", "exercises.html#modes"], ["LAN, MAN or WAN?", "exercises.html#netscale"],
+    ["Match the Transmission Medium", "exercises.html#media"], ["Binary / Decimal Converter", "exercises.html#binary"],
+    ["ASCII and EBCDIC Encoder", "exercises.html#codes"], ["Name the Line Impairment", "exercises.html#impair"],
+    ["Name the Modulation Technique", "exercises.html#modulation"], ["Name the Multiplexing Technique", "exercises.html#mux"],
+    ["TDM and T1 Frame Calculator", "exercises.html#tdm"]
   ];
   let searchIndex = null;
   function buildIndex() {
     const strip = h => String(h || "").replace(/<[^>]+>/g, " ");
     const idx = topics().map(t => ({
-      title: t.title, sub: (unitById(unitOf(t)).id === "extra" ? "Additional · " + levelName(t.level) : unitById(unitOf(t)).name) + " · Lesson", href: topicHref(t.id),
-      text: (t.title + " " + (t.summary || "") + " " + strip(t.body) + " " + strip(t.intro) + " " + strip(t.how) + " " + strip(t.deep) + " " + strip(t.definition)).toLowerCase()
+      title: t.title, sub: unitById(unitOf(t)).name + " · Lesson", href: topicHref(t.id),
+      text: (t.title + " " + (t.summary || "") + " " + strip(t.intro) + " " + strip(t.how) + " " + strip(t.deep) + " " + strip(t.definition)).toLowerCase()
     }));
     if (window.VizKit) VizKit.all().forEach(m => idx.push({ title: m.title, sub: "Studio · " + (m.kind === "viz" ? "Visualization" : "Simulation"), href: "visualizer.html#" + m.id, text: (m.title + " " + (m.desc || "")).toLowerCase() }));
     EXERCISES.forEach(e => idx.push({ title: e[0], sub: "Practice", href: e[1], text: e[0].toLowerCase() }));
@@ -366,8 +358,8 @@
   function getContext() { return context; }
 
   window.App = {
-    icon, Store, Progress, UNITS, LEVELS, STEPS, topics, topicById, topicsInUnit, unitOf, unitById, sequence, neighbours,
-    levelName, badge, unitBadge, topicHref, escapeHtml, shuffle, renderSidebar, setSidebarActive, closeMobileNav,
+    icon, Store, Progress, UNITS, STEPS, topics, topicById, topicsInUnit, unitOf, unitById, sequence, neighbours,
+    unitBadge, topicHref, escapeHtml, shuffle, renderSidebar, setSidebarActive, closeMobileNav,
     learnSidebar, searchAll, toast, download, setContext, getContext
   };
 

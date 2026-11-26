@@ -1,9 +1,9 @@
 # NetLab — Topic Mapping
 
-How the four college Data Communication PDFs map onto NetLab, and how the existing lessons are preserved.
+How the four college Data Communication PDFs map onto NetLab. The site covers only these four units.
 
-- **College syllabus topics** (41) live under **Unit I – Unit IV** and are written from the PDF slides.
-- **Additional Learning Topics** (24) are the original NetLab lessons, kept unchanged with the same ids, so saved progress, quiz scores and links still work.
+- **Topics** (41) live under **Unit I – Unit IV** and are written from the PDF slides.
+- The course objectives, outcomes and assessment scheme (Unit I slides 2–4) are on the Learn dashboard under **Course overview**.
 - Every topic follows the same workflow: **Theory → Visualize → Simulate → Quiz → Notes**.
 
 Slide numbers refer to the page numbers of the PDFs.
@@ -72,49 +72,6 @@ Slide numbers refer to the page numbers of the PDFs.
 | 10 | `u4-wdm` | Wavelength Division Multiplexing (WDM) | WDM | 39–40 |
 
 **Items found in the PDFs that were not on the checklist** (all included): open wire, RF propagation and radio bands (short wave, VHF, UHF), satellite and the Iridium system, ASK, DPSK, advantages/disadvantages/examples of modulation, attenuation/distortion/noise, capacitive and inductive coupling, NEXT/FEXT, crosstalk prevention, trunks and switching offices, local loop unbundling and wireless local loop, VoIP and data-over-voice, echo checks and ping, and the assessment scheme (MSE: Units I–II, 10 marks each; ESE: Unit I 5, Unit II 5, Unit III 15, Unit IV 15).
-
----
-
-## Additional Learning Topics (existing NetLab lessons — preserved)
-
-| Group | Topic ids | Related syllabus topics |
-|---|---|---|
-| Beginner | `intro`, `components`, `data-flow`, `network-types`, `topologies`, `media`, `devices` | `u1-intro`, `u1-components`, `u1-modes`, `u1-telecom`, `u2-intro` |
-| Intermediate | `osi`, `tcpip`, `transmission`, `multiplexing`, `switching`, `errors`, `ip-addressing`, `subnetting`, `mac-arp` | `u4-mux`, `u1-serial-parallel` |
-| Advanced | `routing`, `switching-vlan`, `tcp-udp`, `dns`, `dhcp`, `http`, `security`, `wireless` | `u2-secure`, `u2-wireless`, `u2-5g` |
-
-Overlapping lessons are kept as they are and cross-linked. The syllabus version follows the college slides; the additional version goes wider into networking.
-
-### Visualize / Simulate steps for Additional topics
-
-Set in `assets/js/viz-extra.js` (`window.EXTRA_MAP`). The lesson's previous single simulation id is kept as `legacyViz`.
-
-| Topic | Visualize | Simulate |
-|---|---|---|
-| `intro` | `v-dcflow` | `transmission` |
-| `components` | `v-components` | `s-protocol` |
-| `data-flow` | `v-duplex` | `transmission` |
-| `network-types` | `clientserver` | `s-netscale` |
-| `topologies` | `v-topologies` | `topology` |
-| `media` | `v-mediatree` | `s-attenuation` |
-| `devices` | `v-devices` | `switchlearn` |
-| `osi` | `encapsulation` | `osi` |
-| `tcpip` | `v-tcpipmap` | `s-packet` |
-| `transmission` | `v-serialparallel` | `signals` |
-| `multiplexing` | `v-mux` | `s-mux` |
-| `switching` | `v-switching` | `switching` |
-| `errors` | `v-crc` | `s-errordetect` |
-| `ip-addressing` | `v-ipclass` | `s-subnet` |
-| `subnetting` | `v-subnetting` | `s-subnet` |
-| `mac-arp` | `v-arp` | `switchlearn` |
-| `routing` | `v-hops` | `routing` |
-| `switching-vlan` | `v-vlan` | `switchlearn` |
-| `tcp-udp` | `handshake` | `s-packet` |
-| `dns` | `dns` | `clientserver` |
-| `dhcp` | `dhcp` | `s-dhcppool` |
-| `http` | `clientserver` | `s-http` |
-| `security` | `v-tap` | `s-secure` |
-| `wireless` | `v-spectrum` | `s-wireless` |
 
 ---
 

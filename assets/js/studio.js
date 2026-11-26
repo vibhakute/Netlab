@@ -3,12 +3,12 @@
 (function () {
   "use strict";
   const A = App, { icon, escapeHtml, Store } = A;
+  // Core labs: the key simulation of each part of Units I-IV.
   const PRIORITY = [
-    ["Data transmission", "transmission"], ["Network topologies", "topology"], ["OSI model", "osi"], ["Encapsulation & decapsulation", "encapsulation"],
-    ["Packet formation lab", "s-packet"], ["TCP vs UDP & the TCP handshake", "handshake"], ["DNS resolution", "dns"], ["DHCP (DORA)", "dhcp"],
-    ["Routing", "routing"], ["Switching (MAC learning)", "switchlearn"], ["Digital encoding", "signals"], ["AM / FM / PM", "s-analogmod"],
-    ["FSK / BPSK / QPSK / QAM", "s-digitalmod"], ["FDM / TDM", "s-mux"], ["Optical fibre", "s-fibre"], ["Transmission media comparison", "s-mediapick"],
-    ["Error detection & noise", "s-errordetect"]
+    ["Data transmission (Unit I)", "transmission"], ["Simplex, half- and full-duplex (Unit I)", "v-duplex"], ["Serial vs parallel (Unit I)", "s-serialparallel"], ["Modem modulation (Unit I)", "s-modem"],
+    ["Twisted pair noise (Unit II)", "s-twisted"], ["Optical fibre (Unit II)", "s-fibre"], ["Wireless path loss (Unit II)", "s-wireless"], ["Choose a transmission medium (Unit II)", "s-mediapick"],
+    ["ASCII encoder (Unit III)", "s-ascii"], ["EBCDIC encoder (Unit III)", "s-ebcdic"], ["Crosstalk (Unit III)", "s-crosstalk"], ["Transients (Unit III)", "s-transients"],
+    ["AM / FM / PM (Unit IV)", "s-analogmod"], ["ASK / FSK / PSK / QAM (Unit IV)", "s-digitalmod"], ["FDM and TDM (Unit IV)", "s-mux"], ["T1 carrier (Unit IV)", "s-t1"]
   ];
   const list = document.getElementById("studioList"), main = document.getElementById("studioMain");
   let mounted = null;
@@ -53,7 +53,7 @@
     main.innerHTML = '<div class="fade-in"><div class="breadcrumb"><a href="#">Studio</a> › ' + escapeHtml(m.category) + "</div>" +
       '<div class="page-head"><div><span class="k ' + m.kind + '">' + (m.kind === "viz" ? "Visualization" : "Simulation") + "</span><h1>" + escapeHtml(m.title) + "</h1><p>" + escapeHtml(m.desc || "") + "</p></div></div>" +
       '<div id="stHost"></div>' +
-      (lessons.length ? '<p class="used-in">Used in: ' + lessons.map(t => '<a href="' + A.topicHref(t.id, t.viz && t.viz.id === id ? "viz" : "sim") + '">' + escapeHtml(t.title) + "</a> " + (t.unit ? '<span class="syllabus-tag">' + A.unitById(t.unit).name + "</span>" : '<span class="extra-tag">Additional</span>')).join(" · ") + "</p>" : "") +
+      (lessons.length ? '<p class="used-in">Used in: ' + lessons.map(t => '<a href="' + A.topicHref(t.id, t.viz && t.viz.id === id ? "viz" : "sim") + '">' + escapeHtml(t.title) + "</a> " + '<span class="syllabus-tag">' + A.unitById(t.unit).name + "</span>").join(" · ") + "</p>" : "") +
       "</div>";
     mounted = VizKit.mount(main.querySelector("#stHost"), id, {});
   }

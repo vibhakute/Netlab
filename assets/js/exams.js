@@ -1,17 +1,18 @@
-/* Exams page: unit tests, mixed tests, Additional level tests and every
+/* Exams page: unit tests, mixed tests over the four units and every
    topic quiz, all run by QuizEngine. quiz.html#<key> opens one directly. */
 (function () {
   "use strict";
-  const A = App, { icon, escapeHtml, Progress, UNITS, LEVELS } = A;
-  const BANK = window.QUIZ || [];
+  const A = App, { icon, escapeHtml, Progress, UNITS } = A;
+  const BANK = (window.QUIZ || []).filter(q => A.topicById(q.t)); // only the four units
   const sidebar = document.getElementById("sidebar"), content = document.getElementById("content");
   const inUnit = u => q => { const t = A.topicById(q.t); return t && A.unitOf(t) === u; };
   const DEFS = [];
-  UNITS.filter(u => u.id !== "extra").forEach(u => DEFS.push({ key: "exam:" + u.id, group: "Unit tests", title: u.name + " test", desc: "15 random questions across all " + A.topicsInUnit(u.id).length + " topics of " + u.name + ": " + u.title + ". Exam weight: " + u.exam + ".", filter: inUnit(u.id), limit: 15 }));
-  DEFS.push({ key: "exam:syllabus", group: "Mixed tests", title: "Full syllabus test", desc: "20 random questions from all four units.", filter: q => { const t = A.topicById(q.t); return t && !!t.unit; }, limit: 20 });
-  DEFS.push({ key: "mixed", group: "Mixed tests", title: "Mixed challenge (all topics)", desc: "15 random questions from the syllabus and the additional topics.", filter: () => true, limit: 15 });
-  LEVELS.forEach(l => DEFS.push({ key: "level-" + l.id, group: "Additional topics", title: l.name + " level test", desc: "12 random questions from the " + l.name.toLowerCase() + " additional lessons.", filter: q => { const t = A.topicById(q.t); return t && !t.unit && t.level === l.id; }, limit: 12 }));
-  UNITS.forEach(u => A.topicsInUnit(u.id).forEach(t => DEFS.push({ key: t.id, group: (u.id === "extra" ? "Additional" : u.name) + " topic quizzes", title: t.title, desc: "All questions for this topic, easy to hard.", filter: q => q.t === t.id, topic: t, ordered: true })));
+  UNITS.forEach(u => DEFS.push({ key: "exam:" + u.id, group: "Unit tests", title: u.name + " test", desc: "15 random questions across all " + A.topicsInUnit(u.id).length + " topics of " + u.name + ": " + u.title + ". Exam weight: " + u.exam + ".", filter: inUnit(u.id), limit: 15 }));
+  DEFS.push({ key: "exam:syllabus", group: "Mixed tests", title: "Full syllabus test", desc: "20 random questions from all four units.", filter: () => true, limit: 20 });
+  DEFS.push({ key: "mixed", group: "Mixed tests", title: "Quick mixed challenge", desc: "10 random questions from all four units for a short revision session.", filter: () => true, limit: 10 });
+  DEFS.push({ key: "exam:mse", group: "Mixed tests", title: "MSE practice (Units I and II)", desc: "15 random questions from Unit I and Unit II, the units in the mid-semester exam.", filter: q => { const t = A.topicById(q.t); return t && (t.unit === "u1" || t.unit === "u2"); }, limit: 15 });
+  DEFS.push({ key: "exam:ese34", group: "Mixed tests", title: "ESE focus (Units III and IV)", desc: "20 random questions from Unit III and Unit IV, which carry 30 of the 40 end-semester marks.", filter: q => { const t = A.topicById(q.t); return t && (t.unit === "u3" || t.unit === "u4"); }, limit: 20 });
+  UNITS.forEach(u => A.topicsInUnit(u.id).forEach(t => DEFS.push({ key: t.id, group: u.name + " topic quizzes", title: t.title, desc: "All questions for this topic, easy to hard.", filter: q => q.t === t.id, topic: t, ordered: true })));
   const byKey = k => DEFS.find(d => d.key === k);
 
   function drawSidebar(active) {
@@ -23,14 +24,15 @@
     A.setSidebarActive(sidebar, active);
   }
   function home() {
-    const s = Progress.quiz(), keys = Object.keys(s);
+    const s = Progress.quiz(), keys = Object.keys(s).filter(byKey); // ignore scores from removed tests
     const avg = keys.length ? Math.round(keys.reduce((a, k) => a + s[k].best, 0) / keys.length) : 0;
     content.innerHTML = '<div class="fade-in"><span class="kicker">Exams</span><h1 style="margin-top:4px">Test yourself</h1>' +
       '<p class="lead">Unit tests, a full syllabus test and ' + DEFS.filter(d => d.topic).length + " topic quizzes — " + BANK.length + " questions in total, each marked easy, medium or hard, with an explanation after every answer.</p>" +
       '<div class="stats"><div class="stat"><div class="num">' + keys.length + '</div><div class="lbl">Quizzes and tests taken</div></div><div class="stat"><div class="num">' + avg + '%</div><div class="lbl">Average best score</div></div><div class="stat"><div class="num">' + keys.filter(k => s[k].best >= 70).length + '</div><div class="lbl">Passed (70% or more)</div></div></div>' +
       "<h2>Unit tests</h2><div class=\"grid grid-4\">" + DEFS.filter(d => d.group === "Unit tests" || d.group === "Mixed tests").map(card).join("") + "</div>" +
-      "<h2>Additional topics</h2><div class=\"grid grid-4\">" + DEFS.filter(d => d.group === "Additional topics").map(card).join("") + "</div>" +
-      '<p class="muted" style="font-size:.9rem;margin-top:20px">Topic quizzes are listed in the menu, and also appear as step 4 of each lesson.</p></div>';
+      "<h2>Topic quizzes</h2>" + UNITS.map(u => '<div class="panel"><h3 style="margin-top:0">' + u.name + " · " + escapeHtml(u.title) + ' <small class="muted" style="font-weight:400;font-size:.8rem">' + u.exam + '</small></h3><div class="row" style="gap:8px">' +
+        A.topicsInUnit(u.id).map(t => '<a class="pill" href="#' + t.id + '">' + escapeHtml(t.title) + (s[t.id] ? " · " + s[t.id].best + "%" : "") + "</a>").join("") + "</div></div>").join("") +
+      '<p class="muted" style="font-size:.9rem;margin-top:20px">Topic quizzes also appear as step 4 of each lesson.</p></div>';
   }
   function card(d) {
     const sc = Progress.quiz()[d.key], n = BANK.filter(d.filter).length;

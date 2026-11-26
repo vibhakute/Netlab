@@ -1,16 +1,16 @@
 /* =========================================================
    Study Notes page
    #syllabus  college syllabus notes (Units I-IV)
-   #topics    additional-topic notes + cheat sheet
+   #topics    quick revision sheet: key facts and figures of Units I-IV
    #upload    UPLOAD STUDY MATERIAL (PDF, PPTX, DOCX, TXT, MD)
    #generated notes generated from uploads (#view/<id>/<kind>)
    #personal  saved points and personal notes
    ========================================================= */
 (function () {
   "use strict";
-  const A = App, { icon, escapeHtml, Progress, UNITS, LEVELS } = A;
+  const A = App, { icon, escapeHtml, Progress, UNITS } = A;
   const main = document.getElementById("notesMain"), side = document.getElementById("lsb");
-  const TABS = [["syllabus", "College syllabus notes", "book"], ["topics", "Topic notes", "layers"], ["upload", "Uploaded files", "upload"], ["generated", "Generated notes", "sparkle"], ["personal", "Personal notes", "edit"]];
+  const TABS = [["syllabus", "College syllabus notes", "book"], ["topics", "Quick revision sheet", "layers"], ["upload", "Uploaded files", "upload"], ["generated", "Generated notes", "sparkle"], ["personal", "Personal notes", "edit"]];
   const strip = h => String(h || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   const fmtSize = b => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
   const when = t => new Date(t).toLocaleString();
@@ -36,7 +36,7 @@
   /* ---------------- Syllabus notes ---------------- */
   function syllabus() {
     shell("syllabus", '<p class="muted">Exam-focused notes for every syllabus topic. Open a topic for its definition, key points and summary. <button class="btn btn-outline btn-sm no-print" id="pAll">' + icon("print", 14) + " Print all</button></p>" +
-      UNITS.filter(u => u.id !== "extra").map(u => '<section class="notes-sec"><h2>' + u.name + ": " + escapeHtml(u.title) + ' <small class="muted" style="font-size:.8rem;font-weight:400">' + u.exam + "</small></h2>" +
+      UNITS.map(u => '<section class="notes-sec"><h2>' + u.name + ": " + escapeHtml(u.title) + ' <small class="muted" style="font-size:.8rem;font-weight:400">' + u.exam + "</small></h2>" +
         A.topicsInUnit(u.id).map((t, i) => '<details class="panel" style="padding:10px 16px;margin:8px 0"><summary><b>' + (i + 1) + ". " + escapeHtml(t.title) + "</b>" + (Progress.isDone(t.id) ? ' <span class="check">' + icon("check", 13) + "</span>" : "") + "</summary>" +
           '<div class="definition" style="margin-top:10px">' + t.definition + '</div><h4 style="margin:12px 0 4px">Key points</h4><ul class="points">' + (t.exam || []).map(x => "<li>" + x + "</li>").join("") + "</ul>" +
           (t.compare ? table(t.compare, true) : "") + '<div class="revision"><h4>Summary</h4><p style="margin:0">' + t.recap + "</p></div>" +
@@ -44,21 +44,31 @@
     main.querySelector("#pAll").onclick = () => { main.querySelectorAll("details").forEach(d => d.open = true); window.print(); };
   }
 
-  /* ---------------- Additional topic notes ---------------- */
+  /* ---------------- Quick revision sheet (facts and figures from the unit slides) ---------------- */
+  const SHEET = [
+    { u: "u1", rows: [
+      { head: ["Mode", "Direction", "Slide example"], rows: [["Simplex", "One way only", "Keyboard, monitor, speaker, IoT sensor"], ["Half-duplex", "Both ways, one at a time", "Walkie-talkie"], ["Full-duplex", "Both ways at the same time", "Telephone, mobile phone"]] },
+      { head: ["Network", "Range", "Ownership", "Speed / delay"], rows: [["LAN", "Same building or campus", "Private", "High speed, short delay"], ["MAN", "A city, about 5–50 km", "Private or public", "Average speed, moderate delay"], ["WAN", "Above 50 km — country or continent", "Often not one organisation", "Lower speed, long delay"]] },
+      { head: ["Serial", "Parallel"], rows: [["One bit at a time on one line", "All bits of a byte at once on several lines"], ["Cheaper, long distance, no crosstalk between lines", "Faster over short distances, crosstalk and skew"], ["Computer ↔ modem", "Motherboard ↔ hard disk"]] }],
+      facts: ["Five components: message, sender, receiver, transmission medium, protocol.", "Network criteria: performance, reliability, security (plus scalability, cost, manageability, flexibility).", "Modem = modulator + demodulator: digital ⇄ analog. Dial-up: up to 56 kbit/s.", "Modem types: optical, digital, cable, satellite, dial-up. Internal (PCI/PCIe slot, built-in UART) vs external (serial/RS-232 or USB, own power)."] },
+    { u: "u2", rows: [
+      { head: ["Wave", "Frequency range", "Direction", "Use"], rows: [["Radio", "3 kHz – 1 GHz", "Omnidirectional", "AM/FM radio, cordless phones"], ["Microwave", "1 GHz – 300 GHz", "Unidirectional, line of sight", "Mobile phones, TV distribution"], ["Infrared", "300 GHz – 400 THz", "Unidirectional, short range", "TV remotes, wireless mouse"]] },
+      { head: ["", "4G", "5G (slide values)"], rows: [["Max download", "1 Gbit/s", "2.5 Gbit/s"], ["Max upload", "500 Mbit/s", "1.25 Gbit/s"], ["Latency", "≈ 50 ms", "≈ 1 ms"], ["Peak (key features)", "—", "Up to 20 Gbit/s, 1 million devices/km²"]] }],
+      facts: ["Guided: twisted pair (UTP, STP), coaxial, optical fibre, stripline, microstripline. Unguided: radio, microwave, infrared.", "Coax: baseband (whole bandwidth) and broadband (bandwidth split into ranges).", "Fibre works by total internal reflection: core inside a lower-index cladding. SMF core ≈ 9 µm (long distance), MMF larger core (short distance).", "Iridium: LEO satellite constellation with global coverage including both poles.", "IoT architecture: perception → transport/network → processing/middleware → application.", "Optical components: fibre, transmitter (LED or laser diode), receiver (photodiode), amplifier (EDFA)."] },
+    { u: "u3", rows: [
+      { head: ["Character", "ASCII (decimal / binary)", "EBCDIC (hex / binary)"], rows: [["A", "65 / 0100 0001", "C1 / 1100 0001"], ["B", "66 / 0100 0010", "C2 / 1100 0010"], ["0", "48 / 0011 0000", "F0 / 1111 0000"], ["1", "49 / 0011 0001", "F1 / 1111 0001"], ["Space", "32 / 0010 0000", "40 / 0100 0000"]] },
+      { head: ["Transient", "Definition", "Telco limit"], rows: [["Gain hit", "Sudden amplitude increase lasting > 4 ms", "≤ 8 in any 15 min"], ["Dropout", "Signal loss > 12 dB lasting > 4 ms", "≤ 1 in any 30 min"], ["Phase hit", "Sudden phase change > 20° lasting > 4 ms", "≤ 8 in any 15 min"], ["Phase jitter", "Constant small phase swings", "≤ 10° (20–300 Hz), ≤ 15° (4–20 Hz)"]] }],
+      facts: ["ASCII: 7-bit, 128 characters (extended ASCII 8-bit, 256). EBCDIC: 8-bit, 256 codes, IBM mainframes (1964).", "EBCDIC zones: A–I = C1–C9, J–R = D1–D9, S–Z = E2–E9, 0–9 = F0–F9.", "Telephone network: local loops, trunks, switching offices (end → tandem/toll → regional).", "Local loop voice bandwidth 4000 Hz; usable voice band about 300–3300 Hz.", "Impairments: attenuation, distortion, noise; crosstalk (NEXT, FEXT), echo, frequency shift, non-linear distortion, jitter, transients.", "Amplitude jitter: caused by power-supply noise (60 Hz on the slides; 50 Hz mains in India) and 20 Hz ringing tone."] },
+    { u: "u4", rows: [
+      { head: ["Technique", "What changes", "Values"], rows: [["AM / ASK", "Amplitude", "ASK: carrier on/off (zero level) for 1/0"], ["FM / FSK", "Frequency", "FSK: mark (1) and space (0) frequencies"], ["PM / BPSK", "Phase", "BPSK: 0° and 180° (phase reversal keying)"], ["QPSK", "Phase", "0°, 90°, 180°, 270° — 2 bits (bigits) per symbol"], ["DPSK", "Phase relative to previous element", "1 = reverse phase, 0 = keep phase"], ["QAM", "Amplitude and phase", "Several bits per symbol"]] },
+      { head: ["Multiplexing", "Shares", "Key point"], rows: [["FDM", "Frequency bands", "Guard bands between channels; analog"], ["Synchronous TDM", "Fixed time slots", "Slots sent even if empty; T-1, ISDN"], ["Statistical TDM", "Slots on demand", "Only active stations; needs an address"], ["WDM", "Light wavelengths (lambdas)", "FDM for optical fibre"]] }],
+      facts: ["T1 frame = 24 channels × 8 bits + 1 framing bit = 193 bits; 193 × 8000 frames/s = 1.544 Mbit/s.", "One voice channel (DS0) = 8000 samples/s × 8 bits = 64 kbit/s.", "FDM hierarchy: group = 12 channels, supergroup = 5 groups (60), mastergroup = 10 supergroups (600, Bell system; ITU uses 5 supergroups = 300).", "Advantages of modulation: smaller antenna, less wiring cost, no mixing of signals, longer range, better reception, multiplexing, adjustable bandwidth."] }
+  ];
   function topics() {
-    const extras = A.topicsInUnit("extra");
-    const cheat = '<section class="notes-sec" id="n-cheatsheet"><h2>Formula &amp; port cheat sheet</h2>' +
-      '<div class="codebox">Mesh links                = n(n - 1) / 2\nUsable hosts per subnet   = 2^h - 2         (h = host bits)\nNumber of subnets         = 2^s             (s = borrowed bits)\nBlock size                = 256 - mask octet\nNyquist bit rate          = 2 x B x log2(L)\nShannon capacity          = B x log2(1 + SNR)\nHamming parity bits       = smallest r with 2^r >= m + r + 1</div>' +
-      table({ head: ["Protocol", "Port", "Transport"], rows: [["FTP", "20 / 21", "TCP"], ["SSH", "22", "TCP"], ["Telnet", "23", "TCP"], ["SMTP", "25", "TCP"], ["DNS", "53", "UDP / TCP"], ["DHCP", "67 / 68", "UDP"], ["HTTP", "80", "TCP"], ["POP3", "110", "TCP"], ["IMAP", "143", "TCP"], ["HTTPS", "443", "TCP (UDP for HTTP/3)"], ["RDP", "3389", "TCP"]] }) +
-      table({ head: ["OSI Layer", "PDU", "Device", "Address"], rows: [["7 Application", "Data", "Gateway", "-"], ["4 Transport", "Segment", "Firewall", "Port"], ["3 Network", "Packet", "Router", "IP"], ["2 Data Link", "Frame", "Switch", "MAC"], ["1 Physical", "Bits", "Hub", "-"]] }) + "</section>";
-    shell("topics", '<div class="note info"><span class="note-title">Additional topics</span><p>Notes for the networking lessons beyond the syllabus. <button class="btn btn-outline btn-sm no-print" onclick="window.print()">' + icon("print", 14) + " Print</button></p></div>" + cheat +
-      LEVELS.map(l => "<h2>" + l.name + " level</h2>" + extras.filter(t => t.level === l.id).map(t => {
-        const n = t.notes;
-        return '<section class="notes-sec" id="n-' + t.id + '"><h3>' + escapeHtml(t.title) + " " + A.badge(t.level) + '</h3><div class="note info"><span class="note-title">Definition</span><p>' + escapeHtml(n.definition) + "</p></div>" +
-          '<b>Key points</b><ul class="points">' + n.points.map(p => "<li>" + escapeHtml(p) + "</li>").join("") + "</ul>" + (n.compare ? table(n.compare) : "") +
-          '<div class="revision"><h4>Quick revision</h4><ul>' + n.revision.map(r => "<li>" + escapeHtml(r) + "</li>").join("") + "</ul></div>" +
-          '<p class="no-print" style="font-size:.88rem"><a href="' + A.topicHref(t.id) + '">Open lesson →</a></p></section>';
-      }).join("")).join(""));
+    shell("topics", '<div class="note info"><span class="note-title">Quick revision sheet</span><p>The key facts, values and comparison tables of all four units on one page — ideal for the last hour before the exam. <button class="btn btn-outline btn-sm no-print" onclick="window.print()">' + icon("print", 14) + " Print</button></p></div>" +
+      SHEET.map(x => { const u = A.unitById(x.u); return '<section class="notes-sec" id="n-' + u.id + '"><h2>' + u.name + ": " + escapeHtml(u.title) + ' <small class="muted" style="font-size:.8rem;font-weight:400">' + u.exam + "</small></h2>" +
+        x.rows.map(t => table(t)).join("") + '<ul class="points">' + x.facts.map(f => "<li>" + escapeHtml(f) + "</li>").join("") + "</ul>" +
+        '<p class="no-print" style="font-size:.88rem"><a href="learn.html#/unit/' + u.id + '">Open ' + u.name + " lessons →</a></p></section>"; }).join(""));
   }
 
   /* ---------------- Upload ---------------- */
