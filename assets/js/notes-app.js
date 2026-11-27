@@ -17,7 +17,6 @@
   const refWord = d => (d.kind === "slide" ? "slide" : d.kind === "part" ? "part" : "page") + (d.pages.length === 1 ? "" : "s");
   const sessionErrors = []; // files that failed validation/parsing (not stored)
   const busy = {};          // id -> progress text while parsing
-  let aiOn = false;
 
   function table(c, raw) {
     const cell = x => raw ? x : escapeHtml(x);
@@ -80,7 +79,7 @@
       '<input type="file" id="fileIn" multiple accept=".pdf,.pptx,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" hidden></label>' +
       (persistent ? "" : '<div class="note warn"><span class="note-title">Storage unavailable</span><p>This browser blocks IndexedDB (private mode?). Files will be kept only until you close the page.</p></div>') +
       '<ul class="file-list" id="fileList"></ul>' +
-      (docs.length || sessionErrors.length ? "" : '<div class="empty-state" id="noFiles">No files yet. Upload your unit slides or notes to search them, ask the assistant about them with page references, and generate revision notes.</div>') +
+      (docs.length || sessionErrors.length ? "" : '<div class="empty-state" id="noFiles">No files yet. Upload your unit slides or notes to search them and generate revision notes with page references.</div>') +
       '<p class="muted" style="font-size:.86rem">Scanned PDFs (images without a text layer) cannot be read — no OCR is performed, and no notes are invented for them.</p></section>');
     renderFiles(docs);
     const drop = main.querySelector("#drop"), inp = main.querySelector("#fileIn");
@@ -96,13 +95,11 @@
       .concat(sessionErrors.map((e, i) => '<li class="err"><span class="ext">!</span><div><b>' + escapeHtml(e.name) + '</b><small style="color:var(--red)">' + escapeHtml(e.error) + '</small></div><div class="acts"><button class="btn btn-outline btn-sm" data-dismiss="' + i + '">Dismiss</button></div></li>'))
       .concat(docs.map(d => '<li><span class="ext ' + d.ext + '">' + d.ext + "</span><div><b>" + escapeHtml(d.name) + "</b><small>" + fmtSize(d.size) + " · " + d.pages.length + " " + refWord(d) + " · " + d.stats.chars.toLocaleString() + " characters" + (d.stats.emptyPages ? " · " + d.stats.emptyPages + " without text" : "") + " · added " + when(d.added) + "</small></div>" +
         '<div class="acts"><button class="btn btn-primary btn-sm" data-gen="quick" data-id="' + d.id + '">Quick notes</button><button class="btn btn-outline btn-sm" data-gen="detailed" data-id="' + d.id + '">Detailed notes</button>' +
-        (aiOn ? '<button class="btn btn-outline btn-sm" data-ai="' + d.id + '">' + icon("sparkle", 13) + " AI notes</button>" : "") +
         '<button class="btn btn-outline btn-sm" data-text="' + d.id + '">View text</button><button class="btn btn-outline btn-sm" data-del="' + d.id + '" aria-label="Delete ' + escapeHtml(d.name) + '">' + icon("trash", 13) + "</button></div></li>"));
     ul.innerHTML = rows.join("");
     const empty = main.querySelector("#noFiles"); if (empty && rows.length) empty.remove();
     ul.querySelectorAll("[data-dismiss]").forEach(b => b.onclick = () => { sessionErrors.splice(+b.dataset.dismiss, 1); DocStore.all().then(renderFiles); });
     ul.querySelectorAll("[data-gen]").forEach(b => b.onclick = () => generate(b.dataset.id, b.dataset.gen));
-    ul.querySelectorAll("[data-ai]").forEach(b => b.onclick = () => aiNotes(b.dataset.ai, b));
     ul.querySelectorAll("[data-text]").forEach(b => b.onclick = () => { location.hash = "text/" + b.dataset.text; });
     ul.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
       const d = await DocStore.get(b.dataset.del); if (!d || !confirm("Delete “" + d.name + "” and any notes generated from it?")) return;
@@ -137,22 +134,6 @@
     d.notes[kind] = { html: r.html, by: "offline", at: Date.now() };
     await DocStore.put(d);
     location.hash = "view/" + id + "/" + kind;
-  }
-  async function aiNotes(id, btn) {
-    const d = await DocStore.get(id); if (!d) return;
-    const kind = confirm("Generate DETAILED AI notes?\nOK = Detailed, Cancel = Quick revision") ? "detailed" : "quick";
-    btn.disabled = true; btn.textContent = "Generating… (can take 1–2 min)";
-    const label = d.kind === "slide" ? "slide" : d.kind === "part" ? "part" : "page";
-    let budget = 340000;
-    const source = d.pages.filter(p => p.text).map(p => ({ label: d.name + " " + label + " " + p.n, page: p.n, text: p.text })).filter(s => (budget -= s.text.length + 80) > 0);
-    try {
-      const r = await NetAI.notes({ kind, title: d.name, source });
-      const st = await NetAI.status(); const aiLabel = st.free ? "free AI (" + (st.providerName || "") + ", " + st.model + ")" : "Claude";
-      d.notes = d.notes || {};
-      d.notes["ai-" + kind] = { html: '<h1>' + escapeHtml(d.name.replace(/\.[a-z0-9]+$/i, "")) + " — AI " + (kind === "detailed" ? "detailed notes" : "quick revision") + '</h1><p class="gen-meta">Written by ' + escapeHtml(aiLabel) + ' from the text of “' + escapeHtml(d.name) + "”" + (r.partial ? " (first " + r.partial.usedBlocks + " of " + r.partial.totalBlocks + " " + label + "s — the AI can read only part of a long file at once)" : source.length < d.pages.filter(x => x.text).length ? " (first " + source.length + " " + label + "s — the file was too long to send whole)" : "") + ". Check important facts against the page references.</p>" + NetAI.md(r.text).replace(/\[(p\.|page|slide|part)\s*(\d+)\]/gi, '<span class="pg">[$1 $2]</span>'), by: "ai", at: Date.now() };
-      await DocStore.put(d);
-      location.hash = "view/" + id + "/ai-" + kind;
-    } catch (e) { A.toast("AI notes failed: " + e.message); btn.disabled = false; btn.innerHTML = icon("sparkle", 13) + " AI notes"; }
   }
   const KIND = { quick: "Quick revision", detailed: "Detailed notes", "ai-quick": "AI quick revision", "ai-detailed": "AI detailed notes" };
   async function generated() {
@@ -220,8 +201,5 @@
     if (!(a || "").startsWith("n-")) window.scrollTo(0, 0);
   }
   window.addEventListener("hashchange", route);
-  document.addEventListener("DOMContentLoaded", () => {
-    route();
-    if (window.NetAI) NetAI.status().then(s => { aiOn = !!s.configured; if (aiOn && /^#upload/.test(location.hash)) DocStore.all().then(renderFiles); });
-  });
+  document.addEventListener("DOMContentLoaded", route);
 })();

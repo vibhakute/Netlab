@@ -1,8 +1,8 @@
 /* =========================================================
-   NetLab app shell: icons, storage, progress, units/topics
-   model, header, learning sidebar, search and helpers.
-   Progress keys from v1 (netlearn:completed / quiz / exercises
-   / viz) are read and written unchanged, so no progress is lost.
+   NetLab app shell: icons, students, storage, progress, badges,
+   units/topics model, header, learning sidebar, search, helpers.
+   Every student's progress is kept in its own LocalStorage record
+   ("student_progress_<STUDENT ID>"); nothing is shared between IDs.
    ========================================================= */
 (function () {
   "use strict";
@@ -52,21 +52,106 @@
     binary: '<path d="M6 4v6M4 4h2"/><rect x="13" y="4" width="5" height="6" rx="2"/><rect x="4" y="14" width="5" height="6" rx="2"/><path d="M17 14v6M15 14h2"/>',
     signal: '<path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 4v16"/>',
     sparkle: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
-    bookmark: '<path d="M6 3h12v18l-6-4-6 4z"/>'
+    bookmark: '<path d="M6 3h12v18l-6-4-6 4z"/>',
+    cap: '<path d="M22 9 12 4 2 9l10 5 10-5z"/><path d="M6 11.2V16c0 1.4 2.7 3 6 3s6-1.6 6-3v-4.8"/><path d="M22 9v6"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+    lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'
   };
   function icon(name, size) {
     size = size || 20;
     return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[name] || "") + "</svg>";
   }
 
-  /* ---------- Persistent storage (safe) ---------- */
+  /* ---------- Students (one LocalStorage record per Student ID) ----------
+     Each student's data is saved under "student_progress_<ID>". The signed-in ID
+     is kept in "netlab:currentStudent"; signing out only clears that pointer, so
+     every student's saved progress stays on the device. */
+  const STUDENT_PREFIX = "student_progress_", CURRENT_KEY = "netlab:currentStudent";
+  // Everything that belongs to one student. A new student starts from this template.
+  const STUDENT_FIELDS = {
+    completed: [],     // completed lessons (topic ids)
+    quiz: {},          // quiz and test scores: { key: { best, last, attempts } }
+    exercises: [],     // solved practice activities
+    viz: [],           // visualizations / simulations explored
+    steps: {},         // per-lesson workflow steps done (current learning progress)
+    recent: [],        // recently studied lessons, newest first
+    saved: [],         // starred revision points
+    mynotes: {},       // personal notes per lesson
+    badges: {},        // achievements: { badgeId: timeEarned }
+    lastVisited: null  // last page: { href, title, t }
+  };
+  const clone = v => JSON.parse(JSON.stringify(v));
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+  function lsRemove(k) { try { localStorage.removeItem(k); } catch (e) { /* storage blocked */ } }
+  let cache = null; // { id, data } of the signed-in student, re-read when it changes in another tab
+
+  const Student = {
+    normalize(raw) { return String(raw == null ? "" : raw).trim().toUpperCase(); },
+    // Returns an error message, or "" when the ID is valid.
+    validate(raw) {
+      const id = this.normalize(raw);
+      if (!id) return "Please enter your PRN.";
+      if (/\s/.test(id)) return "The PRN cannot contain spaces.";
+      if (id.length < 3 || id.length > 20) return "The PRN must be 3 to 20 characters long.";
+      if (!/^[A-Z0-9][A-Z0-9_-]*$/.test(id)) return "Use only letters and digits (hyphens - and underscores _ are also allowed).";
+      return "";
+    },
+    storageKey(id) { return STUDENT_PREFIX + id; },
+    fresh(id) { const now = Date.now(); return Object.assign(clone(STUDENT_FIELDS), { studentId: id, created: now, updated: now }); },
+    exists(raw) { return lsGet(this.storageKey(this.normalize(raw))) != null; },
+    // Loads a student's record; a missing or damaged record becomes a fresh one.
+    load(id) {
+      let d = null;
+      try { d = JSON.parse(lsGet(this.storageKey(id)) || "null"); } catch (e) { d = null; }
+      if (!d || typeof d !== "object" || Array.isArray(d) || (d.studentId && d.studentId !== id)) d = this.fresh(id);
+      d.studentId = id;
+      Object.keys(STUDENT_FIELDS).forEach(k => { if (d[k] == null) d[k] = clone(STUDENT_FIELDS[k]); });
+      return d;
+    },
+    save(id, data) { data.updated = Date.now(); return lsSet(this.storageKey(id), JSON.stringify(data)); },
+    current() { const id = this.normalize(lsGet(CURRENT_KEY)); return id && !this.validate(id) ? id : null; },
+    data() {
+      const id = this.current();
+      if (!id) return null;
+      if (!cache || cache.id !== id) cache = { id, data: this.load(id) };
+      return cache.data;
+    },
+    login(raw) {
+      const err = this.validate(raw);
+      if (err) return { ok: false, error: err };
+      const id = this.normalize(raw), isNew = !this.exists(id);
+      if (isNew && !this.save(id, this.fresh(id))) return { ok: false, error: "This browser is blocking site storage, so progress cannot be saved. Allow site data for this page and try again." };
+      if (!lsSet(CURRENT_KEY, id)) return { ok: false, error: "This browser is blocking site storage. Allow site data for this page and try again." };
+      cache = null;
+      return { ok: true, id, isNew };
+    },
+    logout() { lsRemove(CURRENT_KEY); cache = null; } // the student's record is kept
+  };
+  // Another tab signed in, signed out or saved progress: stay consistent.
+  window.addEventListener("storage", e => {
+    if (e.key === CURRENT_KEY) location.reload();
+    else if (cache && e.key === Student.storageKey(cache.id)) cache = null;
+  });
+
+  /* ---------- Persistent storage ----------
+     Student fields are read from / written to the signed-in student's record
+     (saved immediately). Other keys (ui:* view preferences) are device settings. */
   const NS = "netlearn:";
+  const isStudentKey = key => Object.prototype.hasOwnProperty.call(STUDENT_FIELDS, key);
   const Store = {
     get(key, fallback) {
+      if (isStudentKey(key)) { const d = Student.data(); return d && d[key] != null ? d[key] : fallback; }
       try { const v = localStorage.getItem(NS + key); return v == null ? fallback : JSON.parse(v); }
       catch (e) { return fallback; }
     },
     set(key, value) {
+      if (isStudentKey(key)) {
+        const id = Student.current(); if (!id) return false;
+        const d = Student.data(); d[key] = value;
+        return Student.save(id, d);
+      }
       try { localStorage.setItem(NS + key, JSON.stringify(value)); return true; } catch (e) { return false; }
     }
   };
@@ -105,6 +190,7 @@
       const list = this.completed().filter(x => x !== id);
       if (done) list.push(id);
       Store.set("completed", list);
+      this.checkBadges();
     },
     quiz() { return Store.get("quiz", {}); },
     saveQuiz(key, pct) {
@@ -112,11 +198,12 @@
       const prev = q[key] || { best: 0, attempts: 0 };
       q[key] = { best: Math.max(prev.best, pct), last: pct, attempts: prev.attempts + 1 };
       Store.set("quiz", q);
+      this.checkBadges();
     },
     exercises() { return Store.get("exercises", []); },
-    markExercise(id) { const l = this.exercises(); if (l.indexOf(id) === -1) { l.push(id); Store.set("exercises", l); } },
+    markExercise(id) { const l = this.exercises(); if (l.indexOf(id) === -1) { l.push(id); Store.set("exercises", l); this.checkBadges(); } },
     viz() { return Store.get("viz", []); },
-    markViz(id) { const l = this.viz(); if (l.indexOf(id) === -1) { l.push(id); Store.set("viz", l); } },
+    markViz(id) { const l = this.viz(); if (l.indexOf(id) === -1) { l.push(id); Store.set("viz", l); this.checkBadges(); } },
     // Per-topic workflow steps: {theory:true, viz:true, sim:true, notes:true}; quiz comes from quiz scores.
     steps(id) {
       const s = Object.assign({}, Store.get("steps", {})[id] || {});
@@ -163,9 +250,32 @@
     myNotes() { return Store.get("mynotes", {}); },
     myNote(id) { return this.myNotes()[id] || ""; },
     setMyNote(id, text) { const m = this.myNotes(); if (text) m[id] = text; else delete m[id]; return Store.set("mynotes", m); },
-    // Resets learning progress only; personal notes, saved points and uploads are kept.
-    reset() { ["completed", "exercises", "viz", "recent"].forEach(k => Store.set(k, [])); Store.set("quiz", {}); Store.set("steps", {}); }
+    // Achievements: earned automatically and saved with the time they were earned.
+    badges() { return Store.get("badges", {}); },
+    checkBadges() {
+      if (!Student.current()) return [];
+      const have = this.badges(), earned = [];
+      BADGES.forEach(b => { if (!have[b.id] && b.test(this)) { have[b.id] = Date.now(); earned.push(b); } });
+      if (earned.length) {
+        Store.set("badges", have);
+        earned.forEach((b, i) => setTimeout(() => toast("Badge earned: " + b.title), 400 + i * 2600));
+      }
+      return earned;
+    },
+    lastVisited() { return Store.get("lastVisited", null); },
+    // Resets the signed-in student's learning progress; personal notes, saved points and uploads are kept.
+    reset() { ["completed", "exercises", "viz", "recent"].forEach(k => Store.set(k, [])); Store.set("quiz", {}); Store.set("steps", {}); Store.set("badges", {}); }
   };
+  const doneCount = list => list.filter(t => Progress.isDone(t.id)).length;
+  const BADGES = [
+    { id: "first-topic", title: "First Steps", icon: "check", desc: "Complete your first topic.", test: () => doneCount(topics()) >= 1 }
+  ].concat(UNITS.map(u => ({ id: "unit-" + u.id, title: u.name + " Complete", icon: u.icon, desc: "Complete every topic of " + u.name + ": " + u.title + ".", test: () => { const l = topicsInUnit(u.id); return l.length > 0 && doneCount(l) === l.length; } }))).concat([
+    { id: "quiz-ace", title: "Quiz Ace", icon: "star", desc: "Score 100% in any topic quiz or test.", test: p => Object.keys(p.quiz()).some(k => p.quiz()[k].best === 100) },
+    { id: "exam-ready", title: "Exam Ready", icon: "award", desc: "Score 70% or more in all four unit tests.", test: p => UNITS.every(u => ((p.quiz()["exam:" + u.id] || {}).best || 0) >= 70) },
+    { id: "explorer", title: "Explorer", icon: "eye", desc: "Explore 20 visualizations and simulations.", test: p => p.viz().length >= 20 },
+    { id: "practice", title: "Practice Champion", icon: "code", desc: "Solve all nine practice exercises.", test: p => EXERCISES.every(e => p.exercises().indexOf(e[1].split("#")[1]) !== -1) },
+    { id: "course", title: "Course Complete", icon: "layers", desc: "Complete all topics of Units I–IV.", test: () => topics().length > 0 && doneCount(topics()) === topics().length }
+  ]);
 
   /* ---------- Header / footer ---------- */
   const NAV = [
@@ -184,19 +294,19 @@
       header.innerHTML =
         '<div class="topbar">' +
         '<button class="menu-btn" id="menuBtn" aria-label="Open navigation">' + icon("menu", 24) + "</button>" +
-        '<a class="brand" href="index.html"><span class="logo">' + icon("net", 20) + '</span><span class="brand-text">NetLab<small>Data Communication</small></span></a>' +
+        '<a class="brand" href="index.html"><span class="logo">' + icon("cap", 20) + '</span><span class="brand-text"><b>Net<span>Lab</span></b><small>Data Communication</small></span></a>' +
         '<nav class="topnav" aria-label="Main">' +
         NAV.map(n => '<a href="' + n.href + '"' + (n.id === page ? ' class="active" aria-current="page"' : "") + ">" + icon(n.icon, 16) + n.label + "</a>").join("") +
         "</nav>" +
         '<div class="top-right"><div class="search">' + icon("search", 16) +
         '<input id="searchInput" type="search" placeholder="Search topics..." autocomplete="off" aria-label="Search topics">' +
-        '<div class="search-results" id="searchResults"></div></div></div>' +
+        '<div class="search-results" id="searchResults"></div></div>' + studentChip() + "</div>" +
         "</div>";
     }
     const footer = document.getElementById("site-footer");
     if (footer) {
       footer.innerHTML = '<footer class="footer"><div>' + NAV.map(n => '<a href="' + n.href + '">' + n.label + "</a>").join("") +
-        '</div><p style="margin:10px 0 0">NetLab — learn data communication by seeing it work. Progress, notes and uploaded files are stored only in this browser.</p></footer>';
+        '</div><p style="margin:10px 0 0">NetLab — Data Communication learning platform (Units I–IV). Progress is saved in this browser, separately for each student (PRN).</p></footer>';
     }
     const menuBtn = document.getElementById("menuBtn");
     const overlay = document.createElement("div");
@@ -213,6 +323,94 @@
       overlay.addEventListener("click", () => document.body.classList.remove("nav-open"));
     }
     initSearch();
+    initStudent();
+  }
+
+  /* ---------- Student sign-in screen, header chip and switching ---------- */
+  function studentChip() {
+    const id = Student.current();
+    if (!id) return "";
+    return '<div class="student" id="student"><button class="student-btn" id="studentBtn" aria-haspopup="true" aria-expanded="false" title="Signed in with PRN ' + escapeHtml(id) + '">' +
+      icon("user", 16) + "<span>" + escapeHtml(id) + "</span></button>" +
+      '<div class="student-menu" id="studentMenu" role="menu"><div class="sm-head"><small>Signed in · PRN</small><b>' + escapeHtml(id) + "</b></div>" +
+      '<a href="learn.html#/progress" role="menuitem">' + icon("chart", 15) + " My progress &amp; badges</a>" +
+      '<button type="button" id="switchStudent" role="menuitem">' + icon("logout", 15) + " Switch student / Log out</button></div></div>";
+  }
+  function initStudent() {
+    const id = Student.current();
+    if (!id) { if (!document.body.hasAttribute("data-nogate")) showGate(); return; }
+    const btn = document.getElementById("studentBtn"), box = document.getElementById("student");
+    if (btn) {
+      btn.addEventListener("click", e => { e.stopPropagation(); const open = box.classList.toggle("open"); btn.setAttribute("aria-expanded", open); });
+      document.addEventListener("click", e => { if (!e.target.closest("#student")) { box.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); } });
+      document.getElementById("switchStudent").addEventListener("click", () => {
+        if (!confirm("Log out PRN " + id + "?\n\nYour progress stays saved on this device. Sign in again with the same PRN to continue.")) return;
+        Student.logout();
+        location.href = "index.html";
+      });
+    }
+    let w = null; try { w = sessionStorage.getItem("netlab:welcome"); sessionStorage.removeItem("netlab:welcome"); } catch (e) { /* ignore */ }
+    if (w) setTimeout(() => toast(w === "new" ? "Welcome, " + id + ". A new progress record has been created." : "Welcome back, " + id + ". Your progress has been restored."), 300);
+    setTimeout(() => Progress.checkBadges(), 1200); // award badges already earned (e.g. progress made before badges existed)
+    // Remember the last page this student visited.
+    const remember = () => setTimeout(() => {
+      const file = location.pathname.split("/").pop() || "index.html";
+      if (file === "index.html") return; // the home page is the starting point, not a "last visited" page
+      Store.set("lastVisited", { href: file + location.hash, title: document.title.replace(/\s+—\s+NetLab$/, ""), t: Date.now() });
+    }, 400);
+    remember(); window.addEventListener("hashchange", remember);
+  }
+  /* Sign-in page shown until a student enters their PRN. */
+  const GATE_SVG = {
+    cap: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 9 12 4 2 9l10 5 10-5z"/><path d="M6 11.2V16c0 1.4 2.7 3 6 3s6-1.6 6-3v-4.8"/><path d="M22 9v6"/></svg>',
+    users: '<svg viewBox="0 0 24 24" width="34" height="34" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4"/><path d="M4 21c0-4.4 3.6-7.5 8-7.5s8 3.1 8 7.5z"/><circle cx="4.6" cy="9.5" r="2.6" opacity=".55"/><circle cx="19.4" cy="9.5" r="2.6" opacity=".55"/><path d="M0 19c0-2.6 1.8-4.6 4.4-5-1 1.4-1.6 3.1-1.7 5z" opacity=".55"/><path d="M24 19c0-2.6-1.8-4.6-4.4-5 1 1.4 1.6 3.1 1.7 5z" opacity=".55"/></svg>',
+    card: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M5 16c.6-1.6 1.7-2.4 3-2.4s2.4.8 3 2.4M14 10h5M14 14h4"/></svg>',
+    login: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zm2 0h6V7a3 3 0 0 0-6 0z"/></svg>',
+    book: '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M2 5.5C4.5 4.2 8 4 11 5.6V20c-3-1.5-6.5-1.4-9 0z" fill="#3b82f6"/><path d="M22 5.5c-2.5-1.3-6-1.5-9 .1V20c3-1.5 6.5-1.4 9 0z" fill="#1d4ed8"/></svg>',
+    quiz: '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><rect x="3" y="2" width="15" height="20" rx="2.5" fill="#16a34a"/><path d="M6.5 7h3M6.5 12h3M6.5 17h3M12 7h3M12 12h2" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="18" cy="17" r="4.5" fill="#fff" stroke="#16a34a" stroke-width="1.6"/><path d="m16 17 1.4 1.4 2.6-2.8" fill="none" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round"/></svg>',
+    chart: '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><rect x="3" y="13" width="4" height="8" rx="1" fill="#8b5cf6"/><rect x="10" y="9" width="4" height="12" rx="1" fill="#7c3aed"/><rect x="17" y="5" width="4" height="16" rx="1" fill="#6d28d9"/><path d="m3 10 6-5 4 3 7-6" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/></svg>',
+    trophy: '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M7 3h10v6a5 5 0 0 1-10 0z" fill="#f59e0b"/><path d="M7 5H3.5a3.5 3.5 0 0 0 3.8 4.2M17 5h3.5a3.5 3.5 0 0 1-3.8 4.2" fill="none" stroke="#f59e0b" stroke-width="2"/><rect x="10.5" y="13.5" width="3" height="4" fill="#d97706"/><rect x="7" y="17.5" width="10" height="3.5" rx="1" fill="#b45309"/></svg>'
+  };
+  // Illustration: a student studying at a laptop.
+  const GATE_ART = '<img class="gate-art" src="assets/img/student-study.jpg" width="670" height="300" alt="A student studying on a laptop">';
+  function showGate() {
+    document.body.classList.add("gate-open");
+    const g = document.createElement("div");
+    g.className = "gate"; g.setAttribute("role", "dialog"); g.setAttribute("aria-modal", "true"); g.setAttribute("aria-labelledby", "gateTitle");
+    const feat = (svg, cls, a, b) => '<li><span class="gf-ic ' + cls + '">' + GATE_SVG[svg] + "</span>" + a + "<br>" + b + "</li>";
+    g.innerHTML =
+      '<header class="gate-top"><div class="gate-logo"><span class="gl-mark">' + GATE_SVG.cap + '</span><b>Net<span>Lab</span></b><i class="gl-sep"></i><em>Learn · Practice · Grow</em></div>' +
+      '<span class="gate-pill">' + GATE_SVG.cap + "Educational Platform</span></header>" +
+      '<div class="gate-main">' +
+      '<section class="gate-welcome">' +
+      '<span class="gate-chip"><i></i>Your Learning Journey Begins Here</span>' +
+      '<h2>Welcome to <span>NetLab!</span></h2>' +
+      "<p>A smart and interactive platform to learn, practice and track your progress in Data Communication.</p>" +
+      '<ul class="gate-feats">' + feat("book", "blue", "Interactive", "Lessons") + feat("quiz", "green", "Engaging", "Quizzes") + feat("chart", "violet", "Track", "Progress") + feat("trophy", "amber", "Earn", "Achievements") + "</ul>" +
+      GATE_ART + "</section>" +
+      '<form class="gate-card" id="gateForm" novalidate>' +
+      '<div class="gate-brand"><span class="gb-mark">' + GATE_SVG.cap + '</span><span><b>Net<span>Lab</span></b><small>Data Communication</small></span></div>' +
+      '<div class="gate-users">' + GATE_SVG.users + "</div>" +
+      '<h1 id="gateTitle">Student Sign-In</h1>' +
+      "<p>Enter your PRN to access your personalized learning dashboard and track your progress.</p>" +
+      '<label for="gateId"><span class="lb-ic">' + GATE_SVG.card + "</span>PRN</label>" +
+      '<input id="gateId" class="input" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="e.g. 1234567890" aria-describedby="gateErr">' +
+      '<div class="gate-err" id="gateErr" role="alert"></div>' +
+      '<button class="gate-btn" type="submit">' + GATE_SVG.login + "Continue</button>" +
+      '<p class="gate-note">' + GATE_SVG.lock + "<span>Your progress is saved automatically in this browser using Local Storage. You can safely continue anytime.</span></p>" +
+      "</form></div>";
+    document.body.appendChild(g);
+    const input = g.querySelector("#gateId"), err = g.querySelector("#gateErr");
+    input.addEventListener("input", () => { err.textContent = ""; input.classList.remove("bad"); });
+    g.querySelector("#gateForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const r = Student.login(input.value);
+      if (!r.ok) { err.textContent = r.error; input.classList.add("bad"); input.focus(); return; }
+      try { sessionStorage.setItem("netlab:welcome", r.isNew ? "new" : "back"); } catch (x) { /* ignore */ }
+      location.reload();
+    });
+    setTimeout(() => input.focus(), 50);
   }
 
   /* ---------- Learning sidebar (Learn + Study Notes pages) ---------- */
@@ -352,13 +550,13 @@
     document.body.appendChild(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   }
-  // Page context for the AI assistant (which topic/step the student is on).
+  // Page context (which view, topic and step is open) for page scripts.
   let context = { page: "" };
   function setContext(c) { context = Object.assign({ page: document.body.getAttribute("data-page") || "" }, c || {}); document.dispatchEvent(new CustomEvent("netlearn:context", { detail: context })); }
   function getContext() { return context; }
 
   window.App = {
-    icon, Store, Progress, UNITS, STEPS, topics, topicById, topicsInUnit, unitOf, unitById, sequence, neighbours,
+    icon, Student, Store, Progress, BADGES, UNITS, STEPS, topics, topicById, topicsInUnit, unitOf, unitById, sequence, neighbours,
     unitBadge, topicHref, escapeHtml, shuffle, renderSidebar, setSidebarActive, closeMobileNav,
     learnSidebar, searchAll, toast, download, setContext, getContext
   };

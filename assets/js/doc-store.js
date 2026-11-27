@@ -1,8 +1,10 @@
 /* =========================================================
    DocStore - uploaded study material kept in IndexedDB (this
    browser only) plus passage search with page references.
-   Record: { id, name, ext, size, added, status: "ready"|"error",
+   Record: { id, owner, name, ext, size, added, status: "ready"|"error",
              error, pages: [{ n, text }], unit, notes }
+   Every file belongs to the student who uploaded it (owner = Student ID);
+   a student only ever sees their own files.
    ========================================================= */
 (function () {
   "use strict";
@@ -31,15 +33,22 @@
       t.onerror = () => reject(t.error);
     }));
   }
+  const me = () => (window.App && App.Student && App.Student.current()) || null;
+  const mine = d => !!d && !!me() && d.owner === me();
   const DocStore = {
     persistent() { return open().then(db => !!db); },
     all() {
       return tx("readonly", s => s ? s.getAll() : Array.from(memory.values()))
-        .then(list => (list || []).sort((a, b) => b.added - a.added));
+        .then(list => (list || []).filter(mine).sort((a, b) => b.added - a.added));
     },
-    get(id) { return tx("readonly", s => s ? s.get(id) : memory.get(id)); },
-    put(rec) { return tx("readwrite", s => s ? s.put(rec) : memory.set(rec.id, rec)).then(() => { changed(); return rec; }); },
-    remove(id) { return tx("readwrite", s => s ? s.delete(id) : memory.delete(id)).then(changed); },
+    get(id) { return tx("readonly", s => s ? s.get(id) : memory.get(id)).then(d => mine(d) ? d : undefined); },
+    put(rec) {
+      if (!me()) return Promise.reject(new Error("Sign in with your PRN first."));
+      rec.owner = rec.owner || me();
+      if (rec.owner !== me()) return Promise.reject(new Error("This file belongs to another student."));
+      return tx("readwrite", s => s ? s.put(rec) : memory.set(rec.id, rec)).then(() => { changed(); return rec; });
+    },
+    remove(id) { return this.get(id).then(d => d ? tx("readwrite", s => s ? s.delete(id) : memory.delete(id)).then(changed) : undefined); },
     search(query, limit) { return this.all().then(list => searchDocs(list.filter(d => d.status === "ready"), query, limit || 5)); }
   };
   function changed() { document.dispatchEvent(new CustomEvent("netlearn:docs")); }

@@ -1,8 +1,8 @@
 {
-  "name": "netlearn-data-communication-guide",
-  "version": "2.0.0",
+  "name": "netlab-data-communication",
+  "version": "3.0.0",
   "private": true,
-  "description": "NetLearn - interactive Data Communication learning site with an optional Claude-powered study assistant.",
+  "description": "NetLab - interactive Data Communication learning platform (Units I-IV) with per-student progress.",
   "scripts": {
     "start": "node server.mjs",
     "dev": "node server.mjs",
@@ -10,8 +10,5 @@
   },
   "engines": {
     "node": ">=20.12"
-  },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^1.13.0"
   }
 }

@@ -8,7 +8,10 @@
     const ov = Progress.overall();
     const recent = Progress.recent().filter(r => A.topicById(r.id));
     const el = document.getElementById("homeStatus");
-    let html = '<div class="mini-prog"><div class="lbl">Your progress</div><b>' + ov.pct + '%</b> <small>· ' + ov.done + " of " + ov.total + ' topics complete</small><div class="progress"><i style="width:' + ov.pct + '%"></i></div></div>';
+    const id = A.Student.current(), badges = Object.keys(Progress.badges()).length, last = Progress.lastVisited();
+    let html = '<div class="mini-prog"><div class="lbl">Your progress</div><b>' + ov.pct + '%</b> <small>· ' + ov.done + " of " + ov.total + ' topics complete</small><div class="progress"><i style="width:' + ov.pct + '%"></i></div>' +
+      (id ? '<div class="signed-in">Signed in · PRN <b>' + escapeHtml(id) + "</b> · " + badges + " of " + A.BADGES.length + ' badges · <a href="learn.html#/progress">View progress</a></div>' : "") +
+      (last && last.href && !/^index\.html/.test(last.href) ? '<div class="signed-in">Last visited: <a href="' + escapeHtml(last.href) + '">' + escapeHtml(last.title || "your last page") + "</a></div>" : "") + "</div>";
     if (recent.length) {
       const r = recent[0], t = A.topicById(r.id);
       html += '<div class="continue"><div class="lbl">Continue learning</div><a href="' + A.topicHref(r.id, r.step) + '">' + escapeHtml(t.title) + " " + icon("arrowR", 14) + "</a>" +
@@ -26,10 +29,9 @@
     // Layout in fractions; denser on the right so the title stays readable.
     const LAYOUT = [
       ["pc", .54, .16], ["pc", .9, .12], ["server", .97, .42], ["pc", .62, .86], ["server", .93, .84], ["pc", .78, .95], ["pc", .47, .62],
-      ["router", .66, .38], ["router", .84, .3], ["router", .76, .64], ["switch", .56, .4], ["switch", .88, .62], ["cloud", .72, .14],
-      ["pc", .2, 1], ["router", .33, .95], ["server", .44, 1], ["pc", .27, 1.06]
-    ];
-    const LINKS = [[0, 10], [6, 10], [10, 7], [7, 8], [7, 9], [8, 1], [8, 12], [12, 7], [8, 2], [9, 11], [11, 2], [11, 4], [9, 3], [9, 5], [11, 5], [9, 14], [14, 13], [14, 15], [14, 16], [6, 14]];
+      ["router", .66, .38], ["router", .84, .3], ["router", .76, .64], ["switch", .56, .4], ["switch", .88, .62], ["cloud", .72, .14]
+    ]; // the left side stays clear for the title and progress
+    const LINKS = [[0, 10], [6, 10], [10, 7], [7, 8], [7, 9], [8, 1], [8, 12], [12, 7], [8, 2], [9, 11], [11, 2], [11, 4], [9, 3], [9, 5], [11, 5], [6, 9]];
     const COLORS = ["#0b7a5c", "#1f6fd1", "#d9861c", "#6b46c1"];
     function resize() {
       const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);

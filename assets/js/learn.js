@@ -256,13 +256,14 @@
     const modules = window.VizKit ? VizKit.all() : [];
     const explored = Progress.viz().filter(id => modules.some(m => m.id === id)).length;
     main.innerHTML = '<div class="fade-in"><div class="breadcrumb"><a href="#/">Dashboard</a> › Progress</div>' +
-      '<div class="page-head"><div><span class="kicker">Saved in this browser</span><h1>My Learning Progress</h1></div>' +
+      '<div class="page-head"><div><span class="kicker">PRN · ' + escapeHtml(A.Student.current() || "") + '</span><h1>My Learning Progress</h1><p>Saved automatically in this browser under your PRN.</p></div>' +
       '<button class="btn btn-outline btn-sm" id="resetP">' + icon("reset", 14) + " Reset progress</button></div>" +
       '<div class="stats" style="margin-top:14px">' +
       '<div class="stat"><div class="num">' + ov.pct + '%</div><div class="lbl">Overall progress</div><div class="progress"><i style="width:' + ov.pct + '%"></i></div></div>' +
       '<div class="stat"><div class="num">' + ov.done + " / " + ov.total + '</div><div class="lbl">Topics completed</div></div>' +
       '<div class="stat"><div class="num">' + quizKeys.length + '</div><div class="lbl">Quizzes taken · average best ' + avg + "%</div></div>" +
       '<div class="stat"><div class="num">' + explored + " / " + modules.length + '</div><div class="lbl">Visualizations &amp; simulations explored</div></div></div>' +
+      badgeSection() +
       "<h2>By unit</h2>" + UNITS.map(u => {
         const l = A.topicsInUnit(u.id);
         return '<div class="panel"><div class="row" style="justify-content:space-between"><h3 style="margin:0">' + u.name + " · " + escapeHtml(u.title) + '</h3><a href="#/unit/' + u.id + '">' + Progress.unitPercent(u.id) + "% →</a></div>" +
@@ -274,9 +275,15 @@
         quizKeys.filter(k => !A.topicById(k)).map(k => "<tr><td>" + escapeHtml(examName(k)) + "</td><td>" + q[k].best + "%</td><td>" + q[k].last + "%</td><td>" + q[k].attempts + "</td></tr>").join("") + "</tbody></table></div>" : "") +
       "</div>";
     main.querySelector("#resetP").onclick = () => {
-      if (!confirm("Reset all learning progress? Your personal notes, saved points and uploaded files are kept.")) return;
+      if (!confirm("Reset all learning progress and badges for PRN " + A.Student.current() + "? Personal notes, saved points and uploaded files are kept. Other students are not affected.")) return;
       Progress.reset(); A.toast("Progress reset"); route();
     };
+  }
+  function badgeSection() {
+    const have = Progress.badges(), n = A.BADGES.filter(b => have[b.id]).length;
+    return '<h2>Badges <small class="muted" style="font-weight:400;font-size:.9rem">' + n + " of " + A.BADGES.length + " earned</small></h2>" +
+      '<div class="badges">' + A.BADGES.map(b => '<div class="badge-card' + (have[b.id] ? "" : " locked") + '"><span class="bic">' + icon(have[b.id] ? b.icon : "lock", 18) + "</span><span><b>" + escapeHtml(b.title) + "</b><small>" + escapeHtml(b.desc) + "</small>" +
+        (have[b.id] ? '<small class="when">Earned ' + new Date(have[b.id]).toLocaleDateString() + "</small>" : "") + "</span></div>").join("") + "</div>";
   }
   function examName(k) {
     if (k === "mixed") return "Quick mixed challenge";
