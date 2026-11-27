@@ -138,7 +138,7 @@ quiz.html           Exams (exams.js)
 exercises.html      Practice (exercises.js)
 notes.html          Study Notes (notes-app.js, doc-store.js, doc-parser.js, notes-generator.js)
 tutorials.html      redirect for old lesson links
-server.mjs          optional local static server (npm start)
+local-server.mjs    optional local static server (npm start); ignored by Vercel
 
 assets/js/
   app.js            shell, icons, Student (per-ID LocalStorage records, sign-in, switching),

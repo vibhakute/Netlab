@@ -21,7 +21,7 @@ const TYPES = {
   ".json": "application/json; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".ico": "image/x-icon",
   ".md": "text/markdown; charset=utf-8", ".txt": "text/plain; charset=utf-8", ".woff2": "font/woff2", ".map": "application/json"
 };
-const BLOCKED = [/^\.env/, /^\.git/, /^\.vercel/, /^node_modules/, /^server\.mjs$/, /^package(-lock)?\.json$/];
+const BLOCKED = [/^\.env/, /^\.git/, /^\.vercel/, /^node_modules/, /^local-server\.mjs$/, /^package(-lock)?\.json$/];
 function serveStatic(req, res) {
   let rel;
   try { rel = decodeURIComponent(new URL(req.url, "http://x").pathname).replace(/^\/+/, ""); } catch { return send(res, 400, "Bad request"); }
